@@ -1,0 +1,12 @@
+run tests:
+  stage: test
+  image: python:3
+  script:
+    - pip install coverage
+    - coverage run --source statkit -m unittest discover test
+    - coverage report
+    - coverage xml
+  coverage: '/TOTAL.*\s([.\d]+)%/'
+  artifacts:
+    reports:
+      cobertura: coverage.xml
