@@ -2,6 +2,7 @@ run tests:
   stage: test
   image: python:3
   script:
+    - pip install -r requirements.txt
     - pip install coverage
     - coverage run --source statkit -m unittest discover test
     - coverage report
