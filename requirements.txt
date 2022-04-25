@@ -2,3 +2,5 @@ coverage
 pomegranate>=0.14.8
 scikit-learn>=1.0
 numpy
+pandas
+scipy

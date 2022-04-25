@@ -17,7 +17,7 @@ from numpy.random import randint
 from numpy.testing import assert_array_almost_equal
 from pandas import DataFrame, Series
 import pomegranate as pg
-from pomegranate import NaiveBayes, NormalDistribution
+from pomegranate import NormalDistribution
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
 
