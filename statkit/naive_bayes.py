@@ -6,7 +6,7 @@ from pomegranate.distributions import (
     IndependentComponentsDistribution,
 )
 from pandas import DataFrame, Series
-from numpy import fromiter, testing, unique, vectorize, zeros
+from numpy import fromiter, ndarray, testing, unique, vectorize, zeros
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted
