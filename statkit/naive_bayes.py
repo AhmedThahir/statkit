@@ -18,7 +18,7 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
     def __init__(
         self,
         distributions: list,
-        pseudo_count: Union[float, dict[Distribution, float]] = 0.0,
+        pseudo_count: Union[float, dict[Distribution, float]] = 1.0,
         distribution_kwargs: dict[dict] = {},
     ):
         """
@@ -31,7 +31,7 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
                 Example:
                     {Gaussian: {0: (0, 1), 1: (0, 1)}}
         """
-        self.distributions_ = self.distributions = distributions
+        self.distributions = distributions
         self.distribution_kwargs = distribution_kwargs
         self.pseudo_count = pseudo_count
 
@@ -46,6 +46,22 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
                 raise ValueError(
                     f"Training data contains single class {self.classes_}."
                 )
+
+        # Catch matrices with zero features to prevent segmentation faults.
+        if len(X.shape) < 2 or X.shape[1] < 1:
+            raise ValueError(
+                f"Dimension mismatch: expected matrix, got `X` with shape {X.shape}!"
+            )
+
+        self.distributions_ = self.distributions
+        if isinstance(self.distributions, dict):
+            if not isinstance(X, DataFrame):
+                raise ValueError(
+                    "Expected dataframe when passing distributions as dict."
+                )
+            self.distributions_ = [self.distributions[c] for c in X.columns]
+        elif callable(self.distributions):
+            self.distributions_ = [self.distributions] * X.shape[1]
 
         # For each class, generate a `IndependentComponentsDistribution`.
         distributions = []
@@ -63,14 +79,15 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
                 kwargs.update(self.distribution_kwargs.get(p_i, {}).get(c, {}))
                 p_i_given_c = self.distributions_[i](**kwargs)
                 components.append(p_i_given_c)
-                icd = IndependentComponentsDistribution(components)
-                # IMPORTANT: By default, cython=1 in
-                # `IndependentComponentsDistribution` causing it to call
-                # `_summarize` from its children instead of `summarize`. Since
-                # the former is not implemented, toggle cython to 0 so that
-                # `IndependentComponentsDistribution` falls back on `summarize`
-                # (which we did implement for, e.g., ZeroInflatedGaussian).
-                icd.cython = 0
+
+            icd = IndependentComponentsDistribution(components)
+            # IMPORTANT: By default, cython=1 in
+            # `IndependentComponentsDistribution` causing it to call
+            # `_summarize` from its children instead of `summarize`. Since
+            # the former is not implemented, toggle cython to 0 so that
+            # `IndependentComponentsDistribution` falls back on `summarize`
+            # (which we did implement for, e.g., ZeroInflatedGaussian).
+            icd.cython = 0
 
             distributions.append(icd)
 
@@ -162,16 +179,6 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         else:
             # Identity map in case of NumPy matrix.
             self.column_map_ = {i: i for i in range(X.shape[1])}
-
-        self.distributions_ = self.distributions
-        if isinstance(self.distributions, dict):
-            if not isinstance(X, DataFrame):
-                raise ValueError(
-                    "Expected dataframe when passing distributions as dict."
-                )
-            self.distributions_ = [self.distributions[c] for c in X.columns]
-        elif callable(self.distributions):
-            self.distributions_ = [self.distributions] * X.shape[1]
 
         X, y = self._clean(X, y)
         super().fit(X, y, weights)

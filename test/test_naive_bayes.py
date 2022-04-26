@@ -350,6 +350,17 @@ class TestNaiveBayesClassifier(TestCase):
                 pseudo_count=0,
             ).fit(X, y)
 
+    def test_no_features(self):
+        """Test that a matrix with zero columns raises an exception."""
+        X, y = make_blobs(n_features=2)
+        # Numpy error.
+        with self.assertRaises(ValueError):
+            NaiveBayesClassifier(distributions=Gaussian).fit(X[:, []], y)
+
+        # Panda's data frame.
+        with self.assertRaises(ValueError):
+            NaiveBayesClassifier(distributions=Gaussian).fit(DataFrame(X)[[]], y)
+
     def test_schema_skew(self):
         """Test that schema skew raises an exception."""
         X, y = make_blobs(n_features=2)
