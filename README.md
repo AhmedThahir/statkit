@@ -1,45 +1,57 @@
 # Statkit
-
-Statistics for sci-kit learn.
-
+Supplement your sci-kit learn models with 95 % confidence intervals and p-values.
 
 ## Description
-- Compute 95 % confidence intervals for your test scores.
-- Compute p-values for your test scores.
+- Estimate 95 % confidence intervals for your test scores.
 
+For example, to compute a 95 % confidence interval of the area under the
+receiver operating characteristic curve (ROC AUC):
+```python
+from sklearn.metrics import roc_auc_score
+from statkit import non_parametric
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+y_prob = model.predict_proba(X_test)
+non_parametric.bootstrap_score(y_test, y_prob[:, 1], metric=roc_auc_score)
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- Compute p-value to test if one model is significantly better than another.
+
+For example, to test if the area under the receiver operating characteristic
+curve (ROC AUC) of model 1 is significantly larger than model 2:
+```python
+from sklearn.metrics import roc_auc_score
+from statkit import non_parametric
+
+y_pred_1 = model_1.predict_proba(X_test)
+y_pred_2 = model_2.predict_proba(X_test)
+, p_value = non_parametric.paired_permutation_test(
+    y_test,
+    y_pred_1[:, 1],
+    y_pred_2[:, 1],
+    metric=roc_auc_score,
+)
+```
+
+Detailed documentation can be on the [Statkit API documentation pages](https://hylkedonker.gitlab.io/statkit).
 
 ## Installation
 ```bash
 pip3 install statkit
 ```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
 ## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+You can open a ticket in the [Issue tracker](https://gitlab.com/hylkedonker/statkit/-/issues).
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+We are open for contributions.
+If you open a pull request, make sure that your code is:
+- Well documented,
+- Code formatted with [black](https://github.com/psf/black),
+- And contains an accompanying unit test.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Hylke C. Donker
 
 ## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This code is licensed under the [MIT license](LICENSE).
