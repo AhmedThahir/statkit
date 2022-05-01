@@ -11,7 +11,7 @@ from sklearn.base import BaseEstimator
 from sklearn.feature_selection import SelectorMixin
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils import check_X_y
-from statsmodels.stats.multitest import fdrcorrection
+from statsmodels.stats.multitest import fdrcorrection, multipletests
 
 
 class StatisticalTestFilter(BaseEstimator, SelectorMixin):
@@ -21,7 +21,7 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         self,
         X_pos: DataFrame,
         X_neg: DataFrame,
-        correction: Literal["benjamini-hochberg"] = "benjamini-hochberg",
+        correction: Literal["benjamini-hochberg", "bonferroni"] = "benjamini-hochberg",
     ) -> DataFrame:
         """Column-wise test between positive and negative group.
 
@@ -42,7 +42,13 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
             result.loc[column] = [statistic, p_value]
 
         # Apply multiple-testing correction.
-        reject, pvalue_corrected = fdrcorrection(result.pvalue, alpha=self.p_value)
+        if correction == "benjamini-hochberg":
+            reject, pvalue_corrected = fdrcorrection(result.pvalue, alpha=self.p_value)
+        elif correction == "bonferroni":
+            reject, pvalue_corrected = multipletests(
+                result.pvalue, alpha=self.p_value, method="bonferroni"
+            )
+
         result["pvalue-corrected"] = pvalue_corrected
         result["reject"] = reject
 
@@ -54,6 +60,7 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
             "kolmogorov-smirnov", "mann-whitney-u", "epps-singleton"
         ] = "kolmogorov-smirnov",
         p_value: float = 0.05,
+        correction: Literal["benjamini-hochberg", "bonferroni"] = "benjamini-hochberg",
         **kwargs,
     ):
         """
@@ -64,6 +71,7 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         super().__init__(**kwargs)
         self.statistical_test = statistical_test
         self.p_value = p_value
+        self.correction = correction
 
     def _get_support_mask(self):
         """Compute support mask of features."""
@@ -91,6 +99,6 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         assert len(self.classes_) == 2
         X_neg = X[y == self.classes_[0]]
         X_pos = X[y == self.classes_[1]]
-        self.scores_ = self._apply_test(X_pos, X_neg)
+        self.scores_ = self._apply_test(X_pos, X_neg, correction=self.correction)
 
         return self

@@ -9,7 +9,15 @@ from sklearn.utils import shuffle
 def bootstrap_score(
     y_true, y_pred, metric: Callable, n_iterations: int = 1000, random_state=1234
 ) -> dict:
-    """Compute 95 % confidence interval for `metric` using bootstrapping.
+    """Estimate 95 % confidence interval for `metric` by bootstrapping.
+
+    Example:
+        Estimate 95 % confidence interval of area under the receiver operating
+        characteristic curve (ROC AUC) on the test set of a binary classifier:
+        ```python
+        y_prob = model.predict_proba(X_test)
+        bootstrap_score(y_test, y_prob[:, 1], metric=roc_auc_score)
+        ```
 
     Args:
         y_true: Ground truth labels.
@@ -18,6 +26,10 @@ def bootstrap_score(
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
 
+    Returns:
+        A dictionary with the point estimate (key `"point"`), lower 2.5 % (key
+        `"lower"`), and upper 2.5 % (key `"upper"`) of the estimate's
+        distribution.
     """
     statistics = []
     for i in range(n_iterations):
@@ -47,9 +59,14 @@ def unpaired_permutation_test(
     n_iterations: int = 1000,
     random_state=1234,
 ) -> tuple:
-    """Unpaired permutation test if `metric` estimate of `y_pred_1` is different from `y_pred_2`.
+    r"""Unpaired permutation test comparing scores `y_pred_1` with `y_pred_2`.
 
-    Null hypothesis (H_0): metric is not different.
+    Null hypothesis, \( H_0 \): metric is not different.
+
+    Example:
+        ```
+        unpaired_permutation_test(y_test, y_pred_1, y_pred_2, metric=roc_auc_score)
+        ```
 
     Args:
         y_true: Ground truth labels.
@@ -63,7 +80,7 @@ def unpaired_permutation_test(
     observed_difference = score1 - score2
 
     n_1 = len(y_pred_1)
-    permuted_diff = []
+    score_diff = []
     for i in range(n_iterations):
         # Pool slices and randomly split into groups of size n_1 and n_2.
         y_H0 = shuffle(concat([y_pred_1, y_pred_2]), random_state=random_state + i)
@@ -78,9 +95,9 @@ def unpaired_permutation_test(
 
         permuted_score1 = metric(y1_true, y1_H0)
         permuted_score2 = metric(y2_true, y2_H0)
-        permuted_diff.append(permuted_score1 - permuted_score2)
+        score_diff.append(permuted_score1 - permuted_score2)
 
-    permuted_diff = array(permuted_diff)
+    permuted_diff = array(score_diff)
     if alternative == "greater":
         p_value = mean(permuted_diff >= observed_difference)
     elif alternative == "less":
@@ -100,7 +117,24 @@ def paired_permutation_test(
     n_iterations: int = 1000,
     random_state=1234,
 ) -> tuple:
-    """Paired permutation test if `y_pred_1` metrics are significantly different from `y_pred_2`.
+    """Paired permutation test comparing scores from `y_pred_1` with `y_pred_2`.
+
+    Non-parametric head-to-head comparison of two predictions. Test if
+    `y_pred_1` is statistically different from `y_pred_2` for a given `metric`.
+
+    Example:
+        Test if the area under the receiver operating characteristic curve
+        (ROC AUC) of model 1 statistically significantly better than model 2:
+        ```python
+        y_pred_1 = model_1.predict(X_test)
+        y_pred_2 = model_2.predict(X_test)
+        paired_permutation_test(
+            y_test,
+            y_pred_1,
+            y_pred_2,
+            metric=roc_auc_score,
+        )
+        ```
 
     Args:
         y_true: Ground truth labels.
@@ -118,7 +152,7 @@ def paired_permutation_test(
     observed_difference = score1 - score2
 
     m = len(y_true)
-    permuted_diff = []
+    score_diff = []
     for _ in range(n_iterations):
         mask = random.randint(2, size=m)
         p1 = where(mask, y_pred_1, y_pred_2)
@@ -126,9 +160,9 @@ def paired_permutation_test(
 
         permuted_score1 = metric(y_true, p1)
         permuted_score2 = metric(y_true, p2)
-        permuted_diff.append(permuted_score1 - permuted_score2)
+        score_diff.append(permuted_score1 - permuted_score2)
 
-    permuted_diff = array(permuted_diff)
+    permuted_diff = array(score_diff)
 
     if alternative == "greater":
         p_value = mean(permuted_diff >= observed_difference)

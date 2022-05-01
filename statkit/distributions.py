@@ -190,14 +190,19 @@ class Discrete(pg.DiscreteDistribution):
 
 
 class AbstractInflated(ABC, Distribution):
-    """
-    Probability density where some values {x_1,..,x_n} have finite probability.
+    r"""
+    Probability distribution where some values \( \{x_1,..,x_n\} \) have finite probability.
 
     That is,
-        p(x) = { pi(x)             x in {x_1,..,x_n},
-               { (1-sum_x' pi(x')) p_c(x)  x not in {x_1,..,x_n},
-    where `pi` is a categorical distribution and p_c(x) is the complementary
-    distribution.
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_x & x \in \{x_1,\dots, x_n\}, \\
+            \left(1 - \sum_{x^\prime} \pi_{x^\prime} \right) p_c(x)  & x \notin \{x_1, \dots ,x_n\},
+        \end{matrix}
+        \right.
+    $$
+    where \(\pi_x \) is a categorical distribution and \( p_c(x) \) is the
+    complementary distribution.
     """
 
     @property

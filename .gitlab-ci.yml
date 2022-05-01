@@ -11,3 +11,18 @@ run tests:
   artifacts:
     reports:
       cobertura: coverage.xml
+
+pages:
+  image: alpine:latest
+  stage: deploy
+  script:
+  - apk add py3-pip py3-numpy py3-pandas
+  - pip3 install pdoc3
+  - mkdir public
+  - pdoc --config latex_math=True --html --output-dir public statkit
+  - mv public/statkit/* public/ && rmdir public/statkit/
+  artifacts:
+    paths:
+    - public
+  only:
+  - master

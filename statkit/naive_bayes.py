@@ -1,3 +1,8 @@
+"""
+Naive Bayes classifier with support for feature specific distributions.
+
+See `statkit.distributions` for a list of supported distributions.
+"""
 from typing import Union
 
 from pomegranate.bayes import BayesModel
@@ -103,9 +108,7 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
 
 
 class NaiveBayesClassifier(_BaseNaiveBayes):
-    """
-    scikit-learn wrapper around Pomegranate NaiveBayes classifier.
-    """
+    """Naive Bayes classifier that supports feature specific distributions."""
 
     def __init__(
         self,
@@ -129,7 +132,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         ynp = self.map_label_(y)
         return Xnp, ynp
 
-    def check_schema(self, X):
+    def _check_schema(self, X):
         """Check schema of `X` with X_train."""
         if isinstance(X, DataFrame):
             if len(unique(X.columns)) != len(X.columns):
@@ -139,7 +142,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
             if list(X.columns) != list(self.column_map_.keys()):
                 raise KeyError("Schema skew!")
 
-    def check_smooth_distributions(self):
+    def _check_smooth_distributions(self):
         """Verify that all discrete distributions are non-zero."""
         for c in range(len(self.classes_)):
             distributions_c = self.model_.distributions[c].distributions
@@ -164,7 +167,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
                     ), "Some inflated points have zero probability."
 
     def fit(self, X, y, weights=None):
-        """Fit pomegranate NaiveBayes model from BernoulliDistribution's."""
+        """Estimate feature distributions (per class) and class distribution."""
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
         self.class_map_ = {k: i for i, k in enumerate(self.classes_)}
@@ -182,15 +185,13 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
 
         X, y = self._clean(X, y)
         super().fit(X, y, weights)
-        self.check_smooth_distributions()
+        self._check_smooth_distributions()
 
         self.is_fitted_ = True
         return self
 
     def inspect_distribution(self, column, y=None):
-        """
-        Inspect sufficient statistics of given variable.
-        """
+        """Inspect sufficient statistics of given variable."""
         check_is_fitted(self)
 
         if y is None:
@@ -210,12 +211,10 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return distributions
 
     def predict(self, X):
-        """
-        Predict labels using pomegranate.
-        """
+        """Predict labels for samples."""
         # Check is fit had been called
         check_is_fitted(self)
-        self.check_schema(X)
+        self._check_schema(X)
         X_np = self._clean(X)
         y = self.model_.predict(X_np)
         y = self.map_label_inverse_(y)
@@ -224,16 +223,21 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return y
 
     def feature_importance(self, X):
-        """Compute feature importance for given samples.
+        r"""Compute feature importance for given samples.
 
-        Importance is defined as:
-            [ln p(x_1|c=1) - ln p(x_1|c=0)
-             ,..,
-             ln p(x_n|c=1) - ln p(x_n|c=0),
-             ln p(c=1) - ln p(c=0) ]
+        For sample \( i \) with features \( x^{(i)}_1, \dots, x^{(i)}_n \),
+        compute importance vector (of size \( n + 1 \) ):
+        $$
+        \begin{pmatrix}
+            \ln p(x^{(i)}_1|c=1) - \ln p(x^{(i)}_1|c=0), \\
+             \dots \\
+             \ln p(x^{(i)}_n|c=1) - \ln p(x^{(i)}_n|c=0), \\
+             \ln p(c=1) - \ln p(c=0)
+        \end{pmatrix}
+        $$
         """
         check_is_fitted(self)
-        self.check_schema(X)
+        self._check_schema(X)
         X_np = self._clean(X)
 
         m_rows, n_features = X_np.shape
@@ -263,12 +267,10 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return importance
 
     def predict_proba(self, X):
-        """
-        Make probability prediction.
-        """
+        """Estimate probability per sample, per class."""
         # Check is fit had been called
         check_is_fitted(self)
-        self.check_schema(X)
+        self._check_schema(X)
         X_np = self._clean(X)
         y_pred = self.model_.predict_proba(X_np)
         if isinstance(X, DataFrame):
@@ -285,8 +287,8 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return y_prob[:, 1]
 
     def score(self, X, y):
-        """Calculate accuracy."""
+        """Compute model accuracy."""
         check_is_fitted(self)
-        self.check_schema(X)
+        self._check_schema(X)
         X, y = self._clean(X, y)
         return self.model_.score(X, y)

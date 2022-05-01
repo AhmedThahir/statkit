@@ -4,7 +4,7 @@ from numpy import ones_like
 from numpy import array
 from numpy.testing import assert_almost_equal
 
-from statkit.statistics import paired_permutation_test
+from statkit.non_parametric import paired_permutation_test
 
 
 def mean_estimator(_, y_pred) -> float:
