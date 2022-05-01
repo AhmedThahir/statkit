@@ -15,8 +15,8 @@ def bootstrap_score(
         Estimate 95 % confidence interval of area under the receiver operating
         characteristic curve (ROC AUC) on the test set of a binary classifier:
         ```python
-        y_prob = model.predict_proba(X_test)
-        bootstrap_score(y_test, y_prob[:, 1], metric=roc_auc_score)
+        y_prob = model.predict(X_test)
+        bootstrap_score(y_test, y_prob, metric=roc_auc_score)
         ```
 
     Args:
@@ -126,12 +126,12 @@ def paired_permutation_test(
         Test if the area under the receiver operating characteristic curve
         (ROC AUC) of model 1 statistically significantly better than model 2:
         ```python
-        y_pred_1 = model_1.predict_proba(X_test)
-        y_pred_2 = model_2.predict_proba(X_test)
+        y_pred_1 = model_1.predict(X_test)
+        y_pred_2 = model_2.predict(X_test)
         paired_permutation_test(
             y_test,
-            y_pred_1[:, 1],
-            y_pred_2[:, 1],
+            y_pred_1,
+            y_pred_2,
             metric=roc_auc_score,
         )
         ```

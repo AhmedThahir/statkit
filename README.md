@@ -10,8 +10,8 @@ receiver operating characteristic curve (ROC AUC):
 from sklearn.metrics import roc_auc_score
 from statkit import non_parametric
 
-y_prob = model.predict_proba(X_test)
-non_parametric.bootstrap_score(y_test, y_prob[:, 1], metric=roc_auc_score)
+y_prob = model.predict(X_test)
+auc_95ci: dict = non_parametric.bootstrap_score(y_test, y_prob, metric=roc_auc_score)
 ```
 
 - Compute p-value to test if one model is significantly better than another.
@@ -22,12 +22,12 @@ curve (ROC AUC) of model 1 is significantly larger than model 2:
 from sklearn.metrics import roc_auc_score
 from statkit import non_parametric
 
-y_pred_1 = model_1.predict_proba(X_test)
-y_pred_2 = model_2.predict_proba(X_test)
-, p_value = non_parametric.paired_permutation_test(
+y_pred_1 = model_1.predict(X_test)
+y_pred_2 = model_2.predict(X_test)
+_, p_value = non_parametric.paired_permutation_test(
     y_test,
-    y_pred_1[:, 1],
-    y_pred_2[:, 1],
+    y_pred_1,
+    y_pred_2,
     metric=roc_auc_score,
 )
 ```
