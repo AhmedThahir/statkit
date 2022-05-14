@@ -1,3 +1,9 @@
+r"""Confidence intervals and \(p\)-values of a model's (test) score.
+
+This module contains a set of non-parametric (i.e., without assuming any
+specific distribution) and exact methods of computing 95 % confidence intervals
+and \(p\)-values of your sci-kit learn model's predictions.
+"""
 from typing import Callable, Literal
 
 from numpy import (
@@ -53,9 +59,9 @@ def bootstrap_score(
     # confidence intervals
     alpha = 0.95
     p = ((1.0 - alpha) / 2.0) * 100
-    lower = max(0.0, percentile(statistics, p))
+    lower = percentile(statistics, p)
     p = (alpha + ((1.0 - alpha) / 2.0)) * 100
-    upper = min(1.0, percentile(statistics, p))
+    upper = percentile(statistics, p)
     point_estimate = metric(y_true, y_pred)
     return {"point": point_estimate, "lower": lower, "upper": upper}
 
@@ -75,7 +81,7 @@ def unpaired_permutation_test(
     Null hypothesis, \( H_0 \): metric is not different.
 
     Example:
-        ```
+        ```python
         unpaired_permutation_test(
             # Ground truth - prediction pair first sample set.
             y_test_1,

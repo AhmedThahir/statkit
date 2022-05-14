@@ -1,8 +1,11 @@
+"""Classification metrics not part of sci-kit learn."""
+from numpy import array, ndarray
+from pandas import Series
 from sklearn.metrics import roc_curve
 
 
-def youden_j(y_true, y_pred) -> float:
-    """Compute threshold correspoding to Youden's J.
+def youden_j_threshold(y_true, y_pred) -> float:
+    """Classification threshold with highest Youden's J.
 
     Args:
         y_true: Ground truth labels.
@@ -12,6 +15,21 @@ def youden_j(y_true, y_pred) -> float:
     j_scores = tpr - fpr
     j_ordered = sorted(zip(j_scores, thresholds))
     return j_ordered[-1][1]
+
+
+def youden_j(y_true, y_pred) -> float:
+    r"""Classifier informedness as a balance between true and false postivies.
+
+    Youden's J statistic is defined as:
+    $$
+    J = r_{\mathrm{tp}} - r_{\mathrm{fp}}.
+    $$
+
+    Args:
+        y_true: Ground truth labels.
+        y_pred: Labels predicted by the classifier.
+    """
+    return sensitivity(y_true, y_pred) + specificity(y_true, y_pred) - 1
 
 
 def true_positive_rate(y_true, y_prob, threshold: float = 0.5) -> float:
@@ -29,6 +47,11 @@ def true_positive_rate(y_true, y_prob, threshold: float = 0.5) -> float:
         y_prob: Probability of positive class.
         threshold: Classify as positive when probability exceeds threshold.
     """
+    if not isinstance(y_true, (ndarray, Series)):
+        y_true = array(y_true)
+    if not isinstance(y_prob, (ndarray, Series)):
+        y_prob = array(y_prob)
+
     y_pred = y_prob >= threshold
     positives = sum(y_true)
     true_positives = sum(y_true.astype(bool) & y_pred)
@@ -46,6 +69,11 @@ def false_positive_rate(y_true, y_prob, threshold: float = 0.5) -> float:
         y_prob: Probability of positive class.
         threshold: Classify as positive when probability exceeds threshold.
     """
+    if not isinstance(y_true, (ndarray, Series)):
+        y_true = array(y_true)
+    if not isinstance(y_prob, (ndarray, Series)):
+        y_prob = array(y_prob)
+
     y_pred = y_prob > threshold
     negatives = y_true.size - sum(y_true)
     # Actual negative, but classified as positive.

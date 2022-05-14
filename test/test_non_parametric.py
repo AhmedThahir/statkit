@@ -1,10 +1,14 @@
 from unittest import TestCase
-from numpy import ones_like
+from numpy import ones_like, sqrt
 
 from numpy import array, fromiter
 from numpy.testing import assert_almost_equal
 
-from statkit.non_parametric import paired_permutation_test, unpaired_permutation_test
+from statkit.non_parametric import (
+    bootstrap_score,
+    paired_permutation_test,
+    unpaired_permutation_test,
+)
 
 
 def mean_estimator(_, y_pred) -> float:
@@ -105,7 +109,7 @@ class TestBootstrap(TestCase):
         assert_almost_equal(p_greater, p_mlxtend["greater"], decimal=3)
 
     def test_unpaired_permutation_test(self):
-        """Test trivial permutation problem."""
+        """Test permutation test on exactly solvable combinatorial problem."""
         # Split [0, 1, .., 20] in two groups:
         # [0, 1] + [2, .., 20]
         # which is significant for 1/21 = 5 %.
@@ -156,3 +160,22 @@ class TestBootstrap(TestCase):
             n_iterations=10000,
         )
         assert_almost_equal(p_symmetr, 4 / (n_total * (n_total - 1)), decimal=3)
+
+    def test_95_confidence_interval(self):
+        """Test bootstrapping on exactly solvable combinatorial problem."""
+        n = 60
+        p = 0.5
+        # Make a dataset with probability `p` of 1 and `n` items in total.
+        group = array([0] * int((1 - p) * n) + [1] * int(p * n))
+
+        # Output is bionomially distributed:
+        # E[x] = np
+        # Var[x] = np(1-p)
+        estimate = bootstrap_score(
+            y_true=group, y_pred=group, metric=mean_estimator, n_iterations=10000
+        )
+        assert_almost_equal(estimate["point"], p, decimal=1)
+        std = sqrt(p * (1 - p) / n)
+        # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
+        assert_almost_equal(estimate["lower"], p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate["point"], p + 1.96 * std, decimal=1)
