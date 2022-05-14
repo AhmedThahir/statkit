@@ -10,9 +10,10 @@ def format_confidence_interval(
     """Format 95 % confidence interval dictionary into string.
 
     Args:
-        estimate: Dictionary with keys "point" (the estimate), "lower" [lower
-            limit of 95 % confidence interval(CI)], and "upper" (upper limit of
-            95 % CI).
+        estimate: Dictionary like that returned by
+            `statkit.non_parametric.bootstrap_score`,  with keys "point" (the estimate),
+            "lower" [lower limit of 95 % confidence interval(CI)], and "upper"
+            (upper limit of 95 % CI).
         latex: Format string as LaTeX math.
     """
     value, lower, upper = estimate["point"], estimate["lower"], estimate["upper"]

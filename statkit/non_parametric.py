@@ -24,8 +24,8 @@ def bootstrap_score(
         Estimate 95 % confidence interval of area under the receiver operating
         characteristic curve (ROC AUC) on the test set of a binary classifier:
         ```python
-        y_prob = model.predict(X_test)
-        bootstrap_score(y_test, y_prob, metric=roc_auc_score)
+        y_pred = model.predict(X_test)
+        bootstrap_score(y_test, y_pred, metric=roc_auc_score)
         ```
 
     Args:
@@ -38,8 +38,8 @@ def bootstrap_score(
 
     Returns:
         A dictionary with the point estimate (key `"point"`), lower 2.5 % (key
-        `"lower"`), and upper 2.5 % (key `"upper"`) of the estimate's
-        distribution.
+        `"lower"`), and upper 2.5 % (key `"upper"`) confidence interval of the
+        bootstraped distribution of `metric`.
     """
     statistics = []
     for i in range(n_iterations):
