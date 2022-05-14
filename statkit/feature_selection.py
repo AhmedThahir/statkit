@@ -67,6 +67,9 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         Args:
             statistical_test: Test for difference in feature distributions
                 between labels.
+            p_value: The null hypothesis rejection probability (including
+                `correction`).
+            correction: Multiple testing correction to apply.
         """
         super().__init__(**kwargs)
         self.statistical_test = statistical_test

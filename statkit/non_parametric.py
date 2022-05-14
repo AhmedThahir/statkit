@@ -1,7 +1,16 @@
 from typing import Callable, Literal
 
-from numpy import array, mean, percentile, random, unique, where
-from pandas import Series, concat
+from numpy import (
+    array,
+    column_stack,
+    concatenate,
+    mean,
+    percentile,
+    random,
+    unique,
+    where,
+)
+from pandas import Series
 from sklearn.utils import resample
 from sklearn.utils import shuffle
 
@@ -21,7 +30,8 @@ def bootstrap_score(
 
     Args:
         y_true: Ground truth labels.
-        y_pred: Labels predicted by the classifier.
+        y_pred: Labels predicted by the classifier (or label probabilities,
+            depending on the metric).
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
@@ -51,8 +61,9 @@ def bootstrap_score(
 
 
 def unpaired_permutation_test(
-    y_true: Series,
+    y_true_1: Series,
     y_pred_1: Series,
+    y_true_2: Series,
     y_pred_2: Series,
     metric: Callable,
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
@@ -65,36 +76,50 @@ def unpaired_permutation_test(
 
     Example:
         ```
-        unpaired_permutation_test(y_test, y_pred_1, y_pred_2, metric=roc_auc_score)
+        unpaired_permutation_test(
+            # Ground truth - prediction pair first sample set.
+            y_test_1,
+            y_pred_1,
+            # Ground truth - prediction pair second sample set.
+            y_test_2,
+            y_pred_2,
+            metric=roc_auc_score,
+        )
         ```
 
     Args:
-        y_true: Ground truth labels.
-        y_pred_1, y_pred_2: Predicted labels to compare.
+        y_true_1, y_true_2: Ground truth labels of unpaired groups.
+        y_pred_1, y_pred_2: Predicted labels (or label probabilities,
+            depending on the metric) of corresponding groups.
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
+
+    Returns:
+        Estimated metric difference and corresponding p-value.
     """
-    score1 = metric(y_true.loc[y_pred_1.index], y_pred_1)
-    score2 = metric(y_true.loc[y_pred_2.index], y_pred_2)
+    score1 = metric(y_true_1, y_pred_1)
+    score2 = metric(y_true_2, y_pred_2)
     observed_difference = score1 - score2
 
     n_1 = len(y_pred_1)
     score_diff = []
     for i in range(n_iterations):
         # Pool slices and randomly split into groups of size n_1 and n_2.
-        y_H0 = shuffle(concat([y_pred_1, y_pred_2]), random_state=random_state + i)
-        y1_H0 = y_H0.iloc[:n_1]
-        y2_H0 = y_H0.iloc[n_1:]
+        Y_1 = column_stack([y_true_1, y_pred_1])
+        Y_2 = column_stack([y_true_2, y_pred_2])
+        y_H0 = shuffle(concatenate([Y_1, Y_2]), random_state=random_state + i)
 
-        # Pair y_test with corresponding splits.
-        y1_true = y_true.loc[y1_H0.index]
-        y2_true = y_true.loc[y2_H0.index]
+        y1_true = y_H0[:n_1, 0]
+        y2_true = y_H0[n_1:, 0]
+        y1_pred_H0 = y_H0[:n_1, 1]
+        y2_pred_H0 = y_H0[n_1:, 1]
+
         if len(unique(y1_true)) == 1 or len(unique(y2_true)) == 1:
             continue
 
-        permuted_score1 = metric(y1_true, y1_H0)
-        permuted_score2 = metric(y2_true, y2_H0)
+        permuted_score1 = metric(y1_true, y1_pred_H0)
+        permuted_score2 = metric(y2_true, y2_pred_H0)
         score_diff.append(permuted_score1 - permuted_score2)
 
     permuted_diff = array(score_diff)
@@ -138,13 +163,14 @@ def paired_permutation_test(
 
     Args:
         y_true: Ground truth labels.
-        y_pred_1, y_pred_2: Predicted labels to compare.
+        y_pred_1, y_pred_2: Predicted labels to compare (or label probabilities,
+            depending on the metric).
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
 
     Returns:
-        Estimate and corresponding p-value."""
+        Estimated metric difference and corresponding p-value."""
 
     random.seed(random_state)
     score1 = metric(y_true, y_pred_1)

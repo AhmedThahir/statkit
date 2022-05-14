@@ -1,10 +1,10 @@
 from unittest import TestCase
 from numpy import ones_like
 
-from numpy import array
+from numpy import array, fromiter
 from numpy.testing import assert_almost_equal
 
-from statkit.non_parametric import paired_permutation_test
+from statkit.non_parametric import paired_permutation_test, unpaired_permutation_test
 
 
 def mean_estimator(_, y_pred) -> float:
@@ -103,3 +103,56 @@ class TestBootstrap(TestCase):
             n_iterations=10000,
         )
         assert_almost_equal(p_greater, p_mlxtend["greater"], decimal=3)
+
+    def test_unpaired_permutation_test(self):
+        """Test trivial permutation problem."""
+        # Split [0, 1, .., 20] in two groups:
+        # [0, 1] + [2, .., 20]
+        # which is significant for 1/21 = 5 %.
+        group1 = array([0, 1])
+        group2 = fromiter(range(2, 21), dtype=int)
+        n_total = group1.size + group2.size
+
+        value, p_less = unpaired_permutation_test(
+            y_true_1=group1,
+            y_pred_1=group1,
+            y_true_2=group2,
+            y_pred_2=group2,
+            metric=mean_estimator,
+            alternative="less",
+            n_iterations=10000,
+        )
+
+        self.assertEqual(value, -10.5)
+        # Out of all n(n-1) permutations (diagonals terms are skipped because
+        # the number of unique items in y_true is 1), the following pairs are
+        # counted:
+        # [0, 1] + [1, 0]
+        assert_almost_equal(p_less, 2 / (n_total * (n_total - 1)), decimal=3)
+
+        _, p_greater = unpaired_permutation_test(
+            y_true_1=group1,
+            y_pred_1=group1,
+            y_true_2=group2,
+            y_pred_2=group2,
+            metric=mean_estimator,
+            alternative="greater",
+            n_iterations=10000,
+        )
+        # There are no pairs with mean smaller than [0, 1], because [0, 0] is
+        # disallowed (unique items y_true_1 = 1 is forbidden).
+        self.assertEqual(p_greater, 1)
+
+        # The two-sided test is like the one-sided test, but now the following
+        # pairs are counted:
+        # [0, 1] + [1, 0] + [19, 20] + [20, 19]
+        _, p_symmetr = unpaired_permutation_test(
+            y_true_1=group1,
+            y_pred_1=group1,
+            y_true_2=group2,
+            y_pred_2=group2,
+            metric=mean_estimator,
+            alternative="two-sided",
+            n_iterations=10000,
+        )
+        assert_almost_equal(p_symmetr, 4 / (n_total * (n_total - 1)), decimal=3)
