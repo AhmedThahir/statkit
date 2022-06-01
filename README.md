@@ -26,7 +26,7 @@ from statkit.non_parametric import paired_permutation_test
 
 y_pred_1 = model_1.predict(X_test)
 y_pred_2 = model_2.predict(X_test)
-_, p_value = paired_permutation_test(y_test, y_pred_1, y_pred_2, metric=roc_auc_score)
+p_value = paired_permutation_test(y_test, y_pred_1, y_pred_2, metric=roc_auc_score)
 ```
 
 Detailed documentation can be on the [Statkit API documentation pages](https://hylkedonker.gitlab.io/statkit).

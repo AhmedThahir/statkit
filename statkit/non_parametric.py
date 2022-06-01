@@ -75,7 +75,7 @@ def unpaired_permutation_test(
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
     random_state=1234,
-) -> tuple:
+) -> float:
     r"""Unpaired permutation test comparing scores `y_pred_1` with `y_pred_2`.
 
     Null hypothesis, \( H_0 \): metric is not different.
@@ -102,7 +102,7 @@ def unpaired_permutation_test(
         n_iterations: Resample the data (with replacement) this many times.
 
     Returns:
-        Estimated metric difference and corresponding p-value.
+        The p-value for observering the difference given \( H_0 \).
     """
     score1 = metric(y_true_1, y_pred_1)
     score2 = metric(y_true_2, y_pred_2)
@@ -136,7 +136,7 @@ def unpaired_permutation_test(
     elif alternative == "two-sided":
         p_value = mean(abs(permuted_diff) >= abs(observed_difference))
 
-    return observed_difference, p_value
+    return p_value
 
 
 def paired_permutation_test(
@@ -147,8 +147,8 @@ def paired_permutation_test(
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
     random_state=1234,
-) -> tuple:
-    """Paired permutation test comparing scores from `y_pred_1` with `y_pred_2`.
+) -> float:
+    r"""Paired permutation test comparing scores from `y_pred_1` with `y_pred_2`.
 
     Non-parametric head-to-head comparison of two predictions. Test if
     `y_pred_1` is statistically different from `y_pred_2` for a given `metric`.
@@ -176,7 +176,8 @@ def paired_permutation_test(
         n_iterations: Resample the data (with replacement) this many times.
 
     Returns:
-        Estimated metric difference and corresponding p-value."""
+        The p-value for observering the difference given \( H_0 \).
+    """
 
     random.seed(random_state)
     score1 = metric(y_true, y_pred_1)
@@ -203,4 +204,4 @@ def paired_permutation_test(
     elif alternative == "two-sided":
         p_value = mean(abs(permuted_diff) >= abs(observed_difference))
 
-    return observed_difference, p_value
+    return p_value

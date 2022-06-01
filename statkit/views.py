@@ -42,8 +42,10 @@ def format_confidence_interval(
     return f"{value:.2f} (95 % CI: {lower:.2f}-{upper:.2f})"
 
 
-def format_p_value(number: float, latex: bool = True, symbol: Optional[str] = None) -> str:
-    """Format p-value with two significant digits as string except when ≥ 0.1.
+def format_p_value(
+    number: float, latex: bool = True, symbol: Optional[str] = None
+) -> str:
+    r"""Format p-value with two significant digits as string except when ≥ 0.1.
 
     Args:
         number: Floating point number to format.
@@ -69,7 +71,7 @@ def format_p_value(number: float, latex: bool = True, symbol: Optional[str] = No
         number_str = f"{number:.2f}"
 
     if symbol:
-        number_str = f'{symbol} = {number_str}'
+        number_str = f"{symbol} = {number_str}"
 
     if latex:
         return "$" + number_str + "$"

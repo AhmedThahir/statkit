@@ -25,7 +25,7 @@ def sample_size_roc_auc(
     power: float = 0.8,
     alternative="one-sided",
 ) -> tuple[float, float]:
-    """Estimate required population needed to detect significantly different ROC areas.
+    r"""Estimate required population needed to detect significantly different ROC areas.
 
     Assumes balanced class labels (i.e., equal number of normals and abnormals).
     Null hypothesis ( \( H_0 \) ) is both areas under the receiver operating characteristic (ROC)
@@ -39,7 +39,7 @@ def sample_size_roc_auc(
         area_1: Area under the ROC curve of population 1.
         area_2: Area under the ROC curve of population 2.
         alpha: Probabiliy of type I error.
-        power: Probability of a true positive ( \( 1 - beta \) ).
+        power: Probability of a true positive ( \( 1 - \beta \) ).
 
     Returns:
         Pair of normal and abnormals samples required.

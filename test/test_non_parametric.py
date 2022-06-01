@@ -76,7 +76,7 @@ class TestBootstrap(TestCase):
         }
 
         # Two sided permutation test.
-        _, p_2sided = paired_permutation_test(
+        p_2sided = paired_permutation_test(
             ones_like(self.treatment),
             array(self.treatment),
             array(self.control),
@@ -87,7 +87,7 @@ class TestBootstrap(TestCase):
         assert_almost_equal(p_2sided, p_mlxtend["two-sided"], decimal=3)
 
         # One sided smaller permutation test.
-        _, p_less = paired_permutation_test(
+        p_less = paired_permutation_test(
             ones_like(self.treatment),
             array(self.treatment),
             array(self.control),
@@ -98,7 +98,7 @@ class TestBootstrap(TestCase):
         assert_almost_equal(p_less, p_mlxtend["less"], decimal=3)
 
         # One sided greater permutation test.
-        _, p_greater = paired_permutation_test(
+        p_greater = paired_permutation_test(
             ones_like(self.treatment),
             array(self.treatment),
             array(self.control),
@@ -117,7 +117,7 @@ class TestBootstrap(TestCase):
         group2 = fromiter(range(2, 21), dtype=int)
         n_total = group1.size + group2.size
 
-        value, p_less = unpaired_permutation_test(
+        p_less = unpaired_permutation_test(
             y_true_1=group1,
             y_pred_1=group1,
             y_true_2=group2,
@@ -127,14 +127,13 @@ class TestBootstrap(TestCase):
             n_iterations=10000,
         )
 
-        self.assertEqual(value, -10.5)
         # Out of all n(n-1) permutations (diagonals terms are skipped because
         # the number of unique items in y_true is 1), the following pairs are
         # counted:
         # [0, 1] + [1, 0]
         assert_almost_equal(p_less, 2 / (n_total * (n_total - 1)), decimal=3)
 
-        _, p_greater = unpaired_permutation_test(
+        p_greater = unpaired_permutation_test(
             y_true_1=group1,
             y_pred_1=group1,
             y_true_2=group2,
@@ -150,7 +149,7 @@ class TestBootstrap(TestCase):
         # The two-sided test is like the one-sided test, but now the following
         # pairs are counted:
         # [0, 1] + [1, 0] + [19, 20] + [20, 19]
-        _, p_symmetr = unpaired_permutation_test(
+        p_symmetr = unpaired_permutation_test(
             y_true_1=group1,
             y_pred_1=group1,
             y_true_2=group2,
