@@ -191,12 +191,12 @@ class Discrete(pg.DiscreteDistribution):
 
 class AbstractInflated(ABC, Distribution):
     r"""
-    Probability distribution where some values \( \{x_1,..,x_n\} \) have finite probability.
+    Probability density where some values \( \{x_1,..,x_n\} \) have finite probability.
 
     That is,
     $$
         p(x) = \left \{ \begin{matrix}
-            \pi_x & x \in \{x_1,\dots, x_n\}, \\
+            \pi_{x^\prime} \delta(x-x^\prime) & x^\prime \in \{x_1,\dots, x_n\}, \\
             \left(1 - \sum_{x^\prime} \pi_{x^\prime} \right) p_c(x)  & x \notin \{x_1, \dots ,x_n\},
         \end{matrix}
         \right.
@@ -527,7 +527,17 @@ class InflatedExponential(BaseInflated):
 
 
 class ZeroInflatedExponential(BaseZeroInflated):
-    """Model p(x=0) with finite probability, and the remainder as Exponential."""
+    r"""Exponential distribution with finite probability of value zero.
+
+    That is,
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_0 \delta(x) & x = 0 \\
+            \left(1 - \pi_0 \right) \lambda  e^{-\lambda x}  & x \neq 0,
+        \end{matrix}
+        \right.
+    $$
+    """
 
     ComplementaryDistribution = Exponential
     name = "ZeroInflatedExponential"
@@ -538,6 +548,14 @@ class ZeroInflatedExponential(BaseZeroInflated):
         rate: float = 1.0,
         pseudo_count: float = 0.0,
     ):
+        r"""Initialise distribution with default values.
+
+        Args:
+            pi: Probability of observing the value zero ( \( \pi_0 \) ).
+            rate: Inverse length scale \( \lambda \).
+            pseudo_count: Act like `pi` and `rate` were obtained from this many
+                observations.
+        """
         super().__init__(pi, rate, pseudo_count=pseudo_count)
 
 
