@@ -1,8 +1,9 @@
 from unittest import TestCase
 from numpy import ones_like, sqrt
 
-from numpy import array, fromiter
+from numpy import array, concatenate, fromiter
 from numpy.testing import assert_almost_equal
+from pandas import Series, concat
 
 from statkit.non_parametric import (
     bootstrap_score,
@@ -168,8 +169,8 @@ class TestBootstrap(TestCase):
         group = array([0] * int((1 - p) * n) + [1] * int(p * n))
 
         # Output is bionomially distributed:
-        # E[x] = np
-        # Var[x] = np(1-p)
+        # E[x] = p
+        # Var[x] = p(1-p)/n
         estimate = bootstrap_score(
             y_true=group, y_pred=group, metric=mean_estimator, n_iterations=10000
         )
@@ -178,3 +179,59 @@ class TestBootstrap(TestCase):
         # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
         assert_almost_equal(estimate["lower"], p - 1.96 * std, decimal=1)
         assert_almost_equal(estimate["point"], p + 1.96 * std, decimal=1)
+
+    def test_bootstrap_positive_class(self):
+        """Test that we can specify a positive class."""
+        n = 60
+        p = 0.5
+        # Make a dataset with probability `p` of 1 and `n` items in total.
+        y_np = array([0] * int((1 - p) * n) + [1] * int(p * n))
+
+        # Output is bionomially distributed, like the test above. But now we invert the
+        # positive class so that:
+        # E[x] = (1-p)
+        # Var[x] = p(1-p)/n
+
+        # First test as numpy array.
+        estimate_np = bootstrap_score(
+            y_true=y_np,
+            y_pred=y_np,
+            metric=mean_estimator,
+            pos_label=0,
+            n_iterations=10000,
+        )
+        assert_almost_equal(estimate_np["point"], 1 - p, decimal=1)
+        std = sqrt(p * (1 - p) / n)
+        # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
+        assert_almost_equal(estimate_np["lower"], p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_np["point"], p + 1.96 * std, decimal=1)
+
+        # Secondly, test as pandas Series, but now we don't invert the positive class,
+        # E[x] = p
+        # but make the positive label ordered as follows:
+        # positive class = "a" < "b" = negative class
+        y_pd = Series(y_np).replace({0: "b", 1: "a"})
+        estimate_pd = bootstrap_score(
+            y_true=y_pd,
+            y_pred=y_np,
+            metric=mean_estimator,
+            pos_label="a",
+            n_iterations=10000,
+        )
+        assert_almost_equal(estimate_pd["point"], p, decimal=1)
+        std = sqrt(p * (1 - p) / n)
+        # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
+        assert_almost_equal(estimate_pd["lower"], p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_pd["point"], p + 1.96 * std, decimal=1)
+
+        # Verify that an assertion is raised when label not a binary class while
+        # pos_label is specified.
+        with self.assertRaises(ValueError):
+            bootstrap_score(
+                # Add two extra labels -> no longer binary classification.
+                y_true=concat([y_pd, y_pd.replace({"a": "d", "b": "c"})]),
+                y_pred=concatenate([y_np, y_np]),
+                metric=mean_estimator,
+                pos_label="a",
+                n_iterations=100,
+            )

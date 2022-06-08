@@ -4,17 +4,20 @@ This module contains a set of non-parametric (i.e., without assuming any
 specific distribution) and exact methods of computing 95 % confidence intervals
 and \(p\)-values of your sci-kit learn model's predictions.
 """
-from typing import Callable, Literal
+from typing import Callable, Literal, Optional
 
 from numpy import (
     array,
     column_stack,
     concatenate,
+    isnan,
     mean,
+    ones_like,
     percentile,
     random,
     unique,
     where,
+    zeros_like,
 )
 from pandas import Series
 from sklearn.utils import resample
@@ -22,7 +25,13 @@ from sklearn.utils import shuffle
 
 
 def bootstrap_score(
-    y_true, y_pred, metric: Callable, n_iterations: int = 1000, random_state=1234
+    y_true,
+    y_pred,
+    metric: Callable,
+    n_iterations: int = 1000,
+    random_state=1234,
+    pos_label: Optional[str | int] = None,
+    metrics_kwargs: dict = {},
 ) -> dict:
     """Estimate 95 % confidence interval for `metric` by bootstrapping.
 
@@ -41,19 +50,31 @@ def bootstrap_score(
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
+        pos_label: When `y_true` is a binary classification, the positive class.
+        metric_kwargs: Pass additional keyword arguments to `metric`.
 
     Returns:
         A dictionary with the point estimate (key `"point"`), lower 2.5 % (key
         `"lower"`), and upper 2.5 % (key `"upper"`) confidence interval of the
         bootstraped distribution of `metric`.
     """
+    if pos_label is not None:
+        labels = unique(y_true)
+        if len(labels) != 2:
+            raise ValueError("Must be binary labels when `pos_label` is specified")
+        _y_true = where(y_true == pos_label, ones_like(y_true), zeros_like(y_true))
+    else:
+        _y_true = y_true
+
     statistics = []
     for i in range(n_iterations):
-        y_true_rnd, y_pred_rnd = resample(y_true, y_pred, random_state=random_state + i)
+        y_true_rnd, y_pred_rnd = resample(
+            _y_true, y_pred, random_state=random_state + i
+        )
         # Reject sample if all class labels are the same.
         if len(unique(y_true_rnd)) == 1:
             continue
-        score = metric(y_true_rnd, y_pred_rnd)
+        score = metric(y_true_rnd, y_pred_rnd, **metrics_kwargs)
         statistics.append(score)
 
     # confidence intervals
@@ -62,7 +83,7 @@ def bootstrap_score(
     lower = percentile(statistics, p)
     p = (alpha + ((1.0 - alpha) / 2.0)) * 100
     upper = percentile(statistics, p)
-    point_estimate = metric(y_true, y_pred)
+    point_estimate = metric(_y_true, y_pred)
     return {"point": point_estimate, "lower": lower, "upper": upper}
 
 
