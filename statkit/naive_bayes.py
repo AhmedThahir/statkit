@@ -11,7 +11,7 @@ from pomegranate.distributions import (
     IndependentComponentsDistribution,
 )
 from pandas import DataFrame, Series
-from numpy import fromiter, ndarray, testing, unique, vectorize, zeros
+from numpy import fromiter, isin, ndarray, testing, unique, vectorize, zeros
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted
@@ -58,14 +58,10 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
                 f"Dimension mismatch: expected matrix, got `X` with shape {X.shape}!"
             )
 
+        assert not isinstance(X, DataFrame), "A numpy matrix is required."
+
         self.distributions_ = self.distributions
-        if isinstance(self.distributions, dict):
-            if not isinstance(X, DataFrame):
-                raise ValueError(
-                    "Expected dataframe when passing distributions as dict."
-                )
-            self.distributions_ = [self.distributions[c] for c in X.columns]
-        elif callable(self.distributions):
+        if callable(self.distributions):
             self.distributions_ = [self.distributions] * X.shape[1]
 
         # For each class, generate a `IndependentComponentsDistribution`.
@@ -108,20 +104,15 @@ class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
 
 
 class NaiveBayesClassifier(_BaseNaiveBayes):
-    """Naive Bayes classifier that supports feature specific distributions."""
+    r"""Naive Bayes classifier that supports feature specific distributions.
 
-    def __init__(
-        self,
-        distributions: Union[list, dict, Distribution],
-        pseudo_count: Union[float, dict[Distribution, float]] = 1.0,
-        distribution_kwargs: dict[dict] = {},
-    ):
-        super().__init__(distributions, pseudo_count, distribution_kwargs)
+    $$
+    p(y,\vec{x}) =  p(y) \prod_{i=1}^n p(x_i|y).
+    $$
+    """
 
     def _clean(self, X, y=None):
-        """
-        Turn into numpy array.
-        """
+        """Turn into numpy array."""
         Xnp = X
         if isinstance(X, DataFrame):
             Xnp = X.to_numpy()
@@ -131,6 +122,38 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
 
         ynp = self.map_label_(y)
         return Xnp, ynp
+
+    def __init__(
+        self,
+        distributions: Union[list, dict, Distribution],
+        pseudo_count: Union[float, dict[Distribution, float]] = 1.0,
+        distribution_kwargs: dict[dict] = {},
+    ):
+        """
+        Args:
+            distributions: Distribution to use across all features, or use a `dict` to
+                specify a distribution (=value) per feature (=key).
+            pseudo_count:  Pseudo count for all distributions (when float) or per
+                distribution (indicatd by key in a `dict`).
+            distribution_kwargs: Pass specific keyword arguments (=value) for each
+                distribution type (=key).
+
+        Example:
+            ```
+            from numpy import array, exp
+            from pandas import DataFrame
+            from sklearn.datasets import make_blobs
+            from statkit.distributions import Gaussian, LogNormal
+            from statkit.naive_bayes import NaiveBayesClassifier
+
+            X, y = make_blobs(n_features=2, centers=2)
+            X = DataFrame({'a': X[:, 0], 'b': exp(X[:, 1])})
+            model = NaiveBayesClassifier(distributions={'a': Gaussian, 'b': LogNormal})
+            model.fit(X, y)
+            model.score(X, y)
+            ```
+        """
+        super().__init__(distributions, pseudo_count, distribution_kwargs)
 
     def _check_schema(self, X):
         """Check schema of `X` with X_train."""
@@ -183,6 +206,13 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
             # Identity map in case of NumPy matrix.
             self.column_map_ = {i: i for i in range(X.shape[1])}
 
+        # !! Override distributions before calling `super` method. !!
+        if isinstance(self.distributions, dict):
+            if isinstance(X, DataFrame):
+                self.distributions = [self.distributions[c] for c in X.columns]
+            else:
+                self.distributions = [self.distributions[i] for i in range(X.shape[1])]
+
         X, y = self._clean(X, y)
         super().fit(X, y, weights)
         self._check_smooth_distributions()
@@ -229,10 +259,10 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         compute importance vector (of size \( n + 1 \) ):
         $$
         \begin{pmatrix}
-            \ln p(x^{(i)}_1|c=1) - \ln p(x^{(i)}_1|c=0), \\
+            \ln p(x^{(i)}_1|y=1) - \ln p(x^{(i)}_1|y=0), \\
              \dots \\
-             \ln p(x^{(i)}_n|c=1) - \ln p(x^{(i)}_n|c=0), \\
-             \ln p(c=1) - \ln p(c=0)
+             \ln p(x^{(i)}_n|y=1) - \ln p(x^{(i)}_n|y=0), \\
+             \ln p(y=1) - \ln p(y=0)
         \end{pmatrix}
         $$
         """
@@ -267,7 +297,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return importance
 
     def predict_proba(self, X):
-        """Estimate probability per sample, per class."""
+        r"""Estimate probability per sample \( p(y^{(i)}=c|\vec{x}^{(i)}) \), per class \( c \)."""
         # Check is fit had been called
         check_is_fitted(self)
         self._check_schema(X)
@@ -280,7 +310,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
         return y_pred
 
     def decision_function(self, X) -> ndarray:
-        """The probability of class 1 is the decision function."""
+        """The probability of the positive class."""
         y_prob = self.predict_proba(X)
         if isinstance(y_prob, DataFrame):
             return y_prob.to_numpy()[:, 1]

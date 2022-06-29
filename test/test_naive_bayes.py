@@ -46,6 +46,7 @@ class TestBaseNaiveBayes(TestCase):
         m_pred = _BaseNaiveBayes(
             [Gaussian],
             distribution_kwargs=p_kwargs,
+            pseudo_count=0,
         ).fit(self.X_train, self.y_train)
         m_reference = pg.NaiveBayes.from_samples(
             [NormalDistribution, NormalDistribution], self.X_train, self.y_train
@@ -146,7 +147,7 @@ class TestBaseNaiveBayes(TestCase):
         pi_true = (1 / 3) * c0_prior_pi + (2 / 3) * 0.5
         mu_true = (1 / 2) * c0_prior_mu + (1 / 2) * -1
         sigma_true = sqrt(
-            (1 / 2) * (c0_prior_sigma ** 2 + c0_prior_mu ** 2)
+            (1 / 2) * (c0_prior_sigma**2 + c0_prior_mu**2)
             + (1 / 2) * (0 + (-1) ** 2)
             - 0
         )
@@ -157,9 +158,9 @@ class TestBaseNaiveBayes(TestCase):
         pi_true = (2 / 5) * c1_prior_pi + (3 / 5) * 1 / 3
         mu_true = (1 / 2) * c1_prior_mu + (1 / 2) * 0
         sigma_true = sqrt(
-            (1 / 2) * (c1_prior_sigma ** 2 + c1_prior_mu ** 2)
-            + (1 / 2) * (0.5 ** 2 + (0) ** 2)
-            - mu_true ** 2
+            (1 / 2) * (c1_prior_sigma**2 + c1_prior_mu**2)
+            + (1 / 2) * (0.5**2 + (0) ** 2)
+            - mu_true**2
         )
         zig_c1 = m_pred.model_.distributions[1].distributions[0]
         assert_array_almost_equal(zig_c1.parameters, [pi_true, mu_true, sigma_true])
@@ -167,6 +168,29 @@ class TestBaseNaiveBayes(TestCase):
 
 class TestNaiveBayesClassifier(TestCase):
     """Test sklearn-wrapped Pomegranate model."""
+
+    def test_distribution_specification(self):
+        """Test fit on a dataframe with different distributions per feature."""
+        X, y = make_blobs(n_features=2, centers=2)
+        X_df = DataFrame({"a": X[:, 0], "b": exp(X[:, 1])})
+
+        model = NaiveBayesClassifier(
+            distributions={"a": Gaussian, "b": LogNormal}, pseudo_count=0
+        )
+        model.fit(X_df, y)
+
+        # Gaussians of class 0.
+        g1_c0 = model.model_.distributions[0].distributions[0]
+        g2_c0 = model.model_.distributions[0].distributions[1]
+        assert_array_almost_equal(g1_c0.parameters[0], X[y == 0, 0].mean())
+        # Fitting a log-normal to column exp[x_2] is equavalent a normal on x_2.
+        assert_array_almost_equal(g2_c0.parameters[0], X[y == 0, 1].mean())
+
+        # Gaussians of class 1.
+        g1_c1 = model.model_.distributions[1].distributions[0]
+        g2_c1 = model.model_.distributions[1].distributions[1]
+        assert_array_almost_equal(g1_c1.parameters[0], X[y == 1, 0].mean())
+        assert_array_almost_equal(g2_c1.parameters[0], X[y == 1, 1].mean())
 
     def test_pomegranate_equivalence(self):
         """Test that the sklearn wrapped model gives same predictions."""
@@ -278,7 +302,7 @@ class TestNaiveBayesClassifier(TestCase):
         mu = 2 / 3 * array([1, -1])
         assert_array_almost_equal(g1_c0.parameters[0], mu[0])
         assert_array_almost_equal(g1_c1.parameters[0], mu[1])
-        var = 1 / 3 * 1 + 2 / 3 * (4 + array([1, -1]) ** 2) - mu ** 2
+        var = 1 / 3 * 1 + 2 / 3 * (4 + array([1, -1]) ** 2) - mu**2
         sigma = sqrt(var)
         # Check variances.
         assert_array_almost_equal(g1_c0.parameters[1], sigma[0])

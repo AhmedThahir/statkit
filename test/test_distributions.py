@@ -31,6 +31,7 @@ from statkit.distributions import (
     Gamma,
     Gaussian,
     PinnedLogNormal,
+    Poisson,
     ZeroInflatedGaussian,
 )
 
@@ -48,6 +49,20 @@ class TestGaussian(TestCase):
 
         self.assertEqual(gauss_pseudo.parameters[0], x.mean())
         self.assertEqual(gauss_pseudo.parameters[1], x.std())
+
+
+class TestPoisson(TestCase):
+    """Test pseudo-count support of Poisson distribution."""
+
+    def test_mean(self):
+        """Test mean computation with pseudo-count."""
+        seed(1234)
+        x = np.fromiter(range(10), dtype=int)[::-1]
+        n = 5
+        poisson_pseudo = Poisson(l=x[:n].mean(), pseudo_count=n)
+        poisson_pseudo.fit(x[n:])
+
+        self.assertEqual(poisson_pseudo.parameters[0], x.mean())
 
 
 class TestLogNormal(TestCase):
@@ -223,7 +238,7 @@ class TestInflatedGaussian(TestCase):
         assert_almost_equal(p_prior.parameters[1], mu_true)
 
         sigma_true = sqrt(
-            (1 / 2) * (sigma ** 2 + mu ** 2) + (1 / 2) * (0 + (-1) ** 2) - 0
+            (1 / 2) * (sigma**2 + mu**2) + (1 / 2) * (0 + (-1) ** 2) - 0
         )
         assert_almost_equal(p_prior.parameters[2], sigma_true)
 
@@ -354,7 +369,7 @@ class TestZeroInflatedGaussian(TestCase):
         assert_almost_equal(p_prior.parameters[1], mu_true)
 
         sigma_true = sqrt(
-            (1 / 2) * (sigma ** 2 + mu ** 2) + (1 / 2) * (0 + (-1) ** 2) - 0
+            (1 / 2) * (sigma**2 + mu**2) + (1 / 2) * (0 + (-1) ** 2) - 0
         )
         assert_almost_equal(p_prior.parameters[2], sigma_true)
 

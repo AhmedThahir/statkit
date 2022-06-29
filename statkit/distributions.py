@@ -40,7 +40,7 @@ class Gaussian(pg.NormalDistribution):
         # the prior mean and variance as if they were coming from `pseudo_count`
         # observations.
         if self.pseudo_count > 0:
-            x2 = std ** 2 + mean ** 2
+            x2 = std**2 + mean**2
             self.summaries = [
                 self.pseudo_count,
                 mean * self.pseudo_count,
@@ -65,7 +65,7 @@ class LogNormal(pg.LogNormalDistribution):
         # the prior mean and variance as if they were coming from `pseudo_count`
         # observations.
         if self.pseudo_count > 0:
-            x2 = self.std_ ** 2 + self.mean_ ** 2
+            x2 = self.std_**2 + self.mean_**2
             self.summaries = [
                 self.pseudo_count,
                 self.mean_ * self.pseudo_count,
@@ -187,6 +187,27 @@ class Discrete(pg.DiscreteDistribution):
             return fromiter(logp_iter, dtype=float)
 
         return super().log_probability(X)
+
+
+class Poisson(pg.PoissonDistribution):
+    """Extension of Pomegranate Poisson supporting pseudo_counts."""
+
+    name = "PoissonDistribution"
+
+    def __init__(self, l: float = 1.0, pseudo_count: float = 0.0, **kwargs):
+        super().__init__(l, **kwargs)
+        self.pseudo_count = pseudo_count
+
+        # Pseudo-count hack: compute summaries so that the next `fit` will weigh
+        # the prior mean and variance as if they were coming from `pseudo_count`
+        # observations.
+        if self.pseudo_count > 0:
+            self.summaries = [
+                # Nota bene: Here the order of the summaries is swapped compared to
+                # other distributions.
+                l * self.pseudo_count,
+                self.pseudo_count,
+            ]
 
 
 class AbstractInflated(ABC, Distribution):
