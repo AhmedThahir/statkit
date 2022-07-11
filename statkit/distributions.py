@@ -190,11 +190,20 @@ class Discrete(pg.DiscreteDistribution):
 
 
 class Poisson(pg.PoissonDistribution):
-    """Extension of Pomegranate Poisson supporting pseudo_counts."""
+    r"""Extension of Pomegranate Poisson supporting pseudo_counts.
+
+    $$
+    p(x) = \frac{x^l e^{-l}}{x!}
+    $$
+    """
 
     name = "PoissonDistribution"
 
     def __init__(self, l: float = 1.0, pseudo_count: float = 0.0, **kwargs):
+        """
+        Args:
+            l: Rate (and therefore, the mean) of the distribution.
+        """
         super().__init__(l, **kwargs)
         self.pseudo_count = pseudo_count
 

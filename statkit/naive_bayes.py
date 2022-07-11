@@ -140,7 +140,7 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
 
         Example:
             ```
-            from numpy import array, exp
+            from numpy import exp
             from pandas import DataFrame
             from sklearn.datasets import make_blobs
             from statkit.distributions import Gaussian, LogNormal
@@ -150,7 +150,6 @@ class NaiveBayesClassifier(_BaseNaiveBayes):
             X = DataFrame({'a': X[:, 0], 'b': exp(X[:, 1])})
             model = NaiveBayesClassifier(distributions={'a': Gaussian, 'b': LogNormal})
             model.fit(X, y)
-            model.score(X, y)
             ```
         """
         super().__init__(distributions, pseudo_count, distribution_kwargs)

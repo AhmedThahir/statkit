@@ -10,7 +10,6 @@ from numpy import (
     array,
     column_stack,
     concatenate,
-    isnan,
     mean,
     ones_like,
     percentile,
@@ -23,6 +22,8 @@ from pandas import Series
 from sklearn.utils import resample
 from sklearn.utils import shuffle
 
+from statkit.types import Estimate
+
 
 def bootstrap_score(
     y_true,
@@ -32,7 +33,7 @@ def bootstrap_score(
     random_state=1234,
     pos_label: Optional[str | int] = None,
     metrics_kwargs: dict = {},
-) -> dict:
+) -> Estimate:
     """Estimate 95 % confidence interval for `metric` by bootstrapping.
 
     Example:
@@ -54,9 +55,8 @@ def bootstrap_score(
         metric_kwargs: Pass additional keyword arguments to `metric`.
 
     Returns:
-        A dictionary with the point estimate (key `"point"`), lower 2.5 % (key
-        `"lower"`), and upper 2.5 % (key `"upper"`) confidence interval of the
-        bootstraped distribution of `metric`.
+        The point estimate (see `statkit.types.Estimate`) with 95 % confidence interval
+        of `metric` distribution.
     """
     if pos_label is not None:
         labels = unique(y_true)
