@@ -9,11 +9,10 @@ receiver operating characteristic curve (ROC AUC):
 ```python
 from sklearn.metrics import roc_auc_score
 from statkit.non_parametric import bootstrap_score
-from statkit.views import format_confidence_interval
 
 y_prob = model.predict(X_test)
-auc_95ci: dict = bootstrap_score(y_test, y_prob, metric=roc_auc_score)
-print('Area under the ROC curve:', format_confidence_interval(auc_95ci, latex=False))
+auc_95ci = bootstrap_score(y_test, y_prob, metric=roc_auc_score)
+print('Area under the ROC curve:', auc_95ci)
 ```
 
 - Compute p-value to test if one model is significantly better than another.

@@ -49,26 +49,38 @@ class Gaussian(pg.NormalDistribution):
 
 
 class LogNormal(pg.LogNormalDistribution):
-    """Extension of Pomegranate log-normal distribution supporting pseudo_counts."""
+    r"""Extension of Pomegranate log-normal distribution supporting pseudo_counts.
+
+    $$
+    p(x) = \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
+        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right).
+    $$
+    """
 
     name = "LogNormalDistribution"
 
     def __init__(
-        self, mean: float = 0.0, std: float = 1.0, pseudo_count: float = 0.0, **kwargs
+        self, mu: float = 0.0, sigma: float = 1.0, pseudo_count: float = 0.0, **kwargs
     ):
-        super().__init__(mean, std, **kwargs)
-        self.mean_ = mean
-        self.std_ = std
+        r"""
+        Args:
+            mu: \( \mu \)
+            sigma: \( \sigma \)
+
+        """
+        super().__init__(mu, sigma, **kwargs)
+        self.mu_ = mu
+        self.sigma_ = sigma
         self.pseudo_count = pseudo_count
 
         # Pseudo-count hack: compute summaries so that the next `fit` will weigh
         # the prior mean and variance as if they were coming from `pseudo_count`
         # observations.
         if self.pseudo_count > 0:
-            x2 = self.std_**2 + self.mean_**2
+            x2 = self.sigma_**2 + self.mu_**2
             self.summaries = [
                 self.pseudo_count,
-                self.mean_ * self.pseudo_count,
+                self.mu_ * self.pseudo_count,
                 x2 * self.pseudo_count,
             ]
 
@@ -85,7 +97,7 @@ class PinnedLogNormal(LogNormal):
     def from_summaries(self, inertia: float = 0.0):
         """Reset pinned standard deviation."""
         super().from_summaries(inertia)
-        self.parameters: list = [self.parameters[0], self.std_]
+        self.parameters: list = [self.parameters[0], self.sigma_]
         return self
 
 
@@ -112,11 +124,20 @@ class Bernoulli(pg.BernoulliDistribution):
 
 
 class Exponential(pg.ExponentialDistribution):
-    """Extension of Pomegranate exponential distribution supporting pseudo_counts."""
+    r"""Extension of Pomegranate exponential distribution supporting pseudo_counts.
+
+    $$
+    p(x) = \lambda \exp(-\lambda x).
+    $$
+    """
 
     name = "ExponentialDistribution"
 
     def __init__(self, rate: float = 1.0, pseudo_count: float = 0.0, **kwargs):
+        r"""
+        Args:
+            rate: Decay rate \( \lambda \).
+        """
         super().__init__(rate, **kwargs)
         self.pseudo_count = pseudo_count
 
@@ -131,13 +152,23 @@ class Exponential(pg.ExponentialDistribution):
 
 
 class Gamma(pg.GammaDistribution):
-    """Extension of Pomegranate Gamma distribution supporting pseudo_counts."""
+    r"""Extension of Pomegranate Gamma distribution supporting pseudo_counts.
+
+    $$
+    p(x) = \frac{\beta^\alpha}{\Gamma(\alpha)} x^{\alpha - 1} \exp[-\beta x].
+    $$
+    """
 
     name = "GammaDistribution"
 
     def __init__(
         self, alpha: float = 1.0, beta: float = 1.0, pseudo_count: float = 0.0, **kwargs
     ):
+        r"""
+        Args:
+            alpha: Shape \( \alpha \) of the distribution.
+            beta:  Rate \( \beta \), or inverse scale, of the distribution.
+        """
         super().__init__(alpha, beta, **kwargs)
         if alpha <= 0.0 or beta <= 0.0:
             raise ValueError("Shape `alpha` and rate `beta` must be positive definite!")
@@ -266,12 +297,17 @@ class AbstractInflated(ABC, Distribution):
 
 
 class BaseInflated(AbstractInflated):
-    """Probability density where some values {x_1,..,x_n} have finite probability.
+    r"""Probability density where some values \( \{x_1,\dots ,x_n\} \) have finite probability.
 
     That is,
-        p(x) = { pi(x)             x in {x_1,..,x_n},
-               { (1-sum_x' pi(x')) p_c(x)  x not in {x_1,..,x_n},
-    where `pi` is a categorical distribution and p_c(x) is the complementary
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_{x^\prime} \delta(x-x^\prime) & x^\prime \in \{x_1,\dots, x_n\}, \\
+            \left(1 - \sum_{x^\prime} \pi_{x^\prime} \right) p_c(x)  & x \notin \{x_1, \dots ,x_n\},
+        \end{matrix}
+        \right.
+    $$
+    where `pi` is a categorical distribution and \( p_c(x) \) is the complementary
     distribution."""
 
     name = "InflatedDistribution"

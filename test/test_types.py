@@ -51,6 +51,15 @@ class TestEstimate(TestCase):
         str_representation = str(estimate3)
         self.assertEqual(str_representation, "0.252 (95 % CI: 0.249-0.255)")
 
+        # When the estimate is of the same order of magnitude as the error, than use two digits.
+        estimate4 = Estimate(
+            point=0.711,
+            lower=0.711 - 0.112,
+            upper=0.711 + 0.191,
+        )
+        str_representation = str(estimate4)
+        self.assertEqual(str_representation, "0.71 (95 % CI: 0.60-0.90)")
+
     def test_format_latex(self):
         """Test LaTeX representation of estimate with uncertainty."""
         estimate1 = Estimate(
@@ -66,14 +75,14 @@ class TestEstimate(TestCase):
             lower=25.150 - 0.201,
             upper=25.150 + 0.301,
         )
-        self.assertEqual(estimate2.latex(), "2.52$^{+0.03}_{-0.02} \cdot 10^{1}$")
+        self.assertEqual(estimate2.latex(), r"2.52$^{+0.03}_{-0.02} \cdot 10^{1}$")
 
         estimate3 = Estimate(
             point=0.025150,
             lower=0.025150 - 0.000201,
             upper=0.025150 + 0.000301,
         )
-        self.assertEqual(estimate3.latex(), "2.52$^{+0.03}_{-0.02} \cdot 10^{-2}$")
+        self.assertEqual(estimate3.latex(), r"2.52$^{+0.03}_{-0.02} \cdot 10^{-2}$")
 
         estimate4 = Estimate(
             point=0.25150,
@@ -81,3 +90,22 @@ class TestEstimate(TestCase):
             upper=0.25150 + 0.00301,
         )
         self.assertEqual(estimate4.latex(), "0.252$^{+0.003}_{-0.002}$")
+
+        # When the estimate is of the same order of magnitude as the error, than use two digits.
+        estimate5 = Estimate(
+            point=0.711,
+            lower=0.711 - 0.112,
+            upper=0.711 + 0.191,
+        )
+        self.assertEqual(estimate5.latex(), "0.71$^{+0.19}_{-0.11}$")
+
+    def test_representation(self):
+        """Test that machine representation is actual python code."""
+        estimate = Estimate(
+            point=0.711,
+            lower=0.711 - 0.112,
+            upper=0.711 + 0.191,
+        )
+        # Verify that the representation can be used to instantiate new object.
+        representation = estimate.__repr__()
+        self.assertEqual(estimate, eval(representation))

@@ -75,7 +75,7 @@ class TestLogNormal(TestCase):
         logx = log(x)
         n = 5
         loggauss_pseudo = LogNormal(
-            mean=logx[:n].mean(), std=logx[:n].std(), pseudo_count=n
+            mu=logx[:n].mean(), sigma=logx[:n].std(), pseudo_count=n
         )
         loggauss_pseudo.fit(x[n:])
 
@@ -90,7 +90,7 @@ class TestLogNormal(TestCase):
         logx = log(x)
         n = 5
         gauss_pseudo = PinnedLogNormal(
-            mean=logx[:n].mean(), std=logx[:n].std(), pseudo_count=n
+            mu=logx[:n].mean(), sigma=logx[:n].std(), pseudo_count=n
         )
         gauss_pseudo.fit(x[n:])
 

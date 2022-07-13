@@ -15,7 +15,7 @@ def _get_number_of_significant_digits(value: float, error: float) -> int:
     """Determine how many significant digits to use."""
     _, exponent_estimate = _parse_scientific_notation(value)
     _, exponent_error = _parse_scientific_notation(error)
-    return exponent_estimate - exponent_error + 1
+    return max(exponent_estimate - exponent_error + 1, 2)
 
 
 def _format_float(value: float, n_digits: int):
@@ -129,3 +129,17 @@ class Estimate:
         lower_str = _format_float(self.lower, n_digits)
         upper_str = _format_float(self.upper, n_digits)
         return f"{point_str} (95 % CI: {lower_str}-{upper_str})"
+
+    def __eq__(self, other) -> bool:
+        """Estimates are equal if all their values are equal."""
+        # Perhaps we should make a more lenient definition, that estimate is not
+        # significantly different?
+        return (
+            (self.point == other.point)
+            and (self.upper == other.upper)
+            and (self.lower == other.lower)
+        )
+
+    def __repr__(self) -> str:
+        """Machine friendly representation."""
+        return f"Estimate({self.point}, lower={self.lower}, upper={self.upper})"

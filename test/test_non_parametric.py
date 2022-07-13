@@ -174,11 +174,11 @@ class TestBootstrap(TestCase):
         estimate = bootstrap_score(
             y_true=group, y_pred=group, metric=mean_estimator, n_iterations=10000
         )
-        assert_almost_equal(estimate["point"], p, decimal=1)
+        assert_almost_equal(estimate.point, p, decimal=1)
         std = sqrt(p * (1 - p) / n)
         # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
-        assert_almost_equal(estimate["lower"], p - 1.96 * std, decimal=1)
-        assert_almost_equal(estimate["point"], p + 1.96 * std, decimal=1)
+        assert_almost_equal(estimate.lower, p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate.point, p + 1.96 * std, decimal=1)
 
     def test_bootstrap_positive_class(self):
         """Test that we can specify a positive class."""
@@ -200,11 +200,11 @@ class TestBootstrap(TestCase):
             pos_label=0,
             n_iterations=10000,
         )
-        assert_almost_equal(estimate_np["point"], 1 - p, decimal=1)
+        assert_almost_equal(estimate_np.point, 1 - p, decimal=1)
         std = sqrt(p * (1 - p) / n)
         # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
-        assert_almost_equal(estimate_np["lower"], p - 1.96 * std, decimal=1)
-        assert_almost_equal(estimate_np["point"], p + 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_np.lower, p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_np.point, p + 1.96 * std, decimal=1)
 
         # Secondly, test as pandas Series, but now we don't invert the positive class,
         # E[x] = p
@@ -218,11 +218,11 @@ class TestBootstrap(TestCase):
             pos_label="a",
             n_iterations=10000,
         )
-        assert_almost_equal(estimate_pd["point"], p, decimal=1)
+        assert_almost_equal(estimate_pd.point, p, decimal=1)
         std = sqrt(p * (1 - p) / n)
         # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
-        assert_almost_equal(estimate_pd["lower"], p - 1.96 * std, decimal=1)
-        assert_almost_equal(estimate_pd["point"], p + 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_pd.lower, p - 1.96 * std, decimal=1)
+        assert_almost_equal(estimate_pd.point, p + 1.96 * std, decimal=1)
 
         # Verify that an assertion is raised when label not a binary class while
         # pos_label is specified.

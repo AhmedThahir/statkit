@@ -19,7 +19,6 @@ pages:
   stage: deploy
   script:
   - pip3 install pdoc3
-  - pip3 install -r requirements.txt
   - mkdir public
   - pdoc --config latex_math=True --html --output-dir public statkit
   - mv public/statkit/* public/ && rmdir public/statkit/

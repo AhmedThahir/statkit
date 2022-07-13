@@ -84,7 +84,7 @@ def bootstrap_score(
     p = (alpha + ((1.0 - alpha) / 2.0)) * 100
     upper = percentile(statistics, p)
     point_estimate = metric(_y_true, y_pred)
-    return {"point": point_estimate, "lower": lower, "upper": upper}
+    return Estimate(point=point_estimate, lower=lower, upper=upper)
 
 
 def unpaired_permutation_test(
