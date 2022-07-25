@@ -44,7 +44,7 @@ class TestGaussian(TestCase):
         seed(1234)
         x = normal(size=10)
         n = 5
-        gauss_pseudo = Gaussian(mean=x[:n].mean(), std=x[:n].std(), pseudo_count=n)
+        gauss_pseudo = Gaussian(mu=x[:n].mean(), sigma=x[:n].std(), pseudo_count=n)
         gauss_pseudo.fit(x[n:])
 
         self.assertEqual(gauss_pseudo.parameters[0], x.mean())
@@ -217,8 +217,8 @@ class TestInflatedGaussian(TestCase):
         x_samples = array([-1, -1, -1, nan, -1, 0, 0, 0, 0, 2, 2])
         p_prior = InflatedGaussian(
             special_values={0: p_0, 2: 0, "complement": 1 - p_0},
-            mean=mu,
-            std=sigma,
+            mu=mu,
+            sigma=sigma,
             pseudo_count=n_pseudo,
         ).fit(x_samples)
 
@@ -245,7 +245,7 @@ class TestInflatedGaussian(TestCase):
     def test_samples(self):
         """Test that the samples coincide with the distribution."""
         seed(1234)
-        p_true = InflatedGaussian(special_values=(-1, 1), mean=3, std=2)
+        p_true = InflatedGaussian(special_values=(-1, 1), mu=3, sigma=2)
         x_samples = p_true.sample(50000)
         p_fit = InflatedGaussian(special_values=(-1, 1)).fit(x_samples)
 

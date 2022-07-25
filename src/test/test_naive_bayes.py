@@ -40,8 +40,8 @@ class TestBaseNaiveBayes(TestCase):
         """Test that no initialisation is equivalent to pomegranate NaiveBayes."""
         p_kwargs = {
             Gaussian: {
-                0: {"mean": 0, "std": 1},
-                1: {"mean": 0, "std": 1},
+                0: {"mu": 0, "sigma": 1},
+                1: {"mu": 0, "sigma": 1},
             }
         }
         m_pred = _BaseNaiveBayes(
@@ -71,13 +71,13 @@ class TestBaseNaiveBayes(TestCase):
         p_args = {
             Gaussian: {
                 0: {
-                    "mean": X_lower_train[is_y0].mean(),
-                    "std": X_lower_train[is_y0].std(),
+                    "mu": X_lower_train[is_y0].mean(),
+                    "sigma": X_lower_train[is_y0].std(),
                     "pseudo_count": n_y0,
                 },
                 1: {
-                    "mean": X_lower_train[~is_y0].mean(),
-                    "std": X_lower_train[~is_y0].std(),
+                    "mu": X_lower_train[~is_y0].mean(),
+                    "sigma": X_lower_train[~is_y0].std(),
                     "pseudo_count": n_y1,
                 },
             }
@@ -125,14 +125,14 @@ class TestBaseNaiveBayes(TestCase):
             ZeroInflatedGaussian: {
                 0: {
                     "pi": c0_prior_pi,
-                    "mean": c0_prior_mu,
-                    "std": c0_prior_sigma,
+                    "mu": c0_prior_mu,
+                    "sigma": c0_prior_sigma,
                     "pseudo_count": c0_n_pseudo,
                 },
                 1: {
                     "pi": c1_prior_pi,
-                    "mean": c1_prior_mu,
-                    "std": c1_prior_sigma,
+                    "mu": c1_prior_mu,
+                    "sigma": c1_prior_sigma,
                     "pseudo_count": c1_n_pseudo,
                 },
             }

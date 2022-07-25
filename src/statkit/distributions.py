@@ -26,24 +26,35 @@ from scipy.special import digamma
 
 
 class Gaussian(pg.NormalDistribution):
-    """Extension of Pomegranate Gaussian supporting pseudo_counts."""
+    r"""Extension of Pomegranate Gaussian supporting pseudo_counts.
+
+    $$
+    p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}.
+    $$
+    """
 
     name = "NormalDistribution"
 
     def __init__(
-        self, mean: float = 0.0, std: float = 1.0, pseudo_count: float = 0.0, **kwargs
+        self, mu: float = 0.0, sigma: float = 1.0, pseudo_count: float = 0.0, **kwargs
     ):
-        super().__init__(mean, std, **kwargs)
+        r"""
+        Args:
+            mu: Mean, \( \mu \), or location of Gaussian.
+            sigma: Standard deviation, \( \sigma \), measuring the width/scale of the
+                Gaussian.
+        """
+        super().__init__(mu, sigma, **kwargs)
         self.pseudo_count = pseudo_count
 
         # Pseudo-count hack: compute summaries so that the next `fit` will weigh
         # the prior mean and variance as if they were coming from `pseudo_count`
         # observations.
         if self.pseudo_count > 0:
-            x2 = std**2 + mean**2
+            x2 = sigma**2 + mu**2
             self.summaries = [
                 self.pseudo_count,
-                mean * self.pseudo_count,
+                mu * self.pseudo_count,
                 x2 * self.pseudo_count,
             ]
 
@@ -64,9 +75,8 @@ class LogNormal(pg.LogNormalDistribution):
     ):
         r"""
         Args:
-            mu: \( \mu \)
-            sigma: \( \sigma \)
-
+            mu: Expected value of variable's log ( \( \mu \) ).
+            sigma: Standard deviation of variable log ( \( \sigma \) ).
         """
         super().__init__(mu, sigma, **kwargs)
         self.mu_ = mu
@@ -86,10 +96,15 @@ class LogNormal(pg.LogNormalDistribution):
 
 
 class PinnedLogNormal(LogNormal):
-    """
-    Log normal distribution where the standard deviation is held fixed.
+    r"""Log normal distribution where the standard deviation is held fixed to \( \sigma\).
 
-    Only the mean is infered from the data.
+    Only the parameter \( \mu \) is infered from the data, the parameter \( \sigma \)
+    is fixed after distribution initialisation.
+
+    $$
+    p(x) = \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
+        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right).
+    $$
     """
 
     name = "PinnedLogNormalDistribution"
@@ -250,7 +265,7 @@ class Poisson(pg.PoissonDistribution):
             ]
 
 
-class AbstractInflated(ABC, Distribution):
+class _AbstractInflated(ABC, Distribution):
     r"""
     Probability density where some values \( \{x_1,..,x_n\} \) have finite probability.
 
@@ -296,7 +311,7 @@ class AbstractInflated(ABC, Distribution):
         return cls()
 
 
-class BaseInflated(AbstractInflated):
+class _BaseInflated(_AbstractInflated):
     r"""Probability density where some values \( \{x_1,\dots ,x_n\} \) have finite probability.
 
     That is,
@@ -420,7 +435,7 @@ class BaseInflated(AbstractInflated):
         return x_samples.astype(float)
 
 
-class BaseZeroInflated(AbstractInflated):
+class _BaseZeroInflated(_AbstractInflated):
     """Zero-inflated flated density where p(x=0) has finite probability.
 
     That is,
@@ -497,7 +512,7 @@ class BaseZeroInflated(AbstractInflated):
         self.p_complement_.summarize(x_i[is_non_zero], weights[is_non_zero])
 
 
-class ZeroInflatedGaussian(BaseZeroInflated):
+class ZeroInflatedGaussian(_BaseZeroInflated):
     """Model p(x=0) with finite probability, and the remainder as Gaussian."""
 
     ComplementaryDistribution = Gaussian
@@ -506,14 +521,14 @@ class ZeroInflatedGaussian(BaseZeroInflated):
     def __init__(
         self,
         pi: float = 0.5,
-        mean: float = 0.0,
-        std: float = 1.0,
+        mu: float = 0.0,
+        sigma: float = 1.0,
         pseudo_count: float = 0.0,
     ):
-        super().__init__(pi, mean, std, pseudo_count=pseudo_count)
+        super().__init__(pi, mu, sigma, pseudo_count=pseudo_count)
 
 
-class InflatedGaussian(BaseInflated):
+class InflatedGaussian(_BaseInflated):
     """Gaussian with finite probability of observing `special_values`."""
 
     ComplementaryDistribution = Gaussian
@@ -522,15 +537,27 @@ class InflatedGaussian(BaseInflated):
     def __init__(
         self,
         special_values: Union[dict, tuple] = (0, 1, inf),
-        mean: float = 0.0,
-        std: float = 1.0,
+        mu: float = 0.0,
+        sigma: float = 1.0,
         pseudo_count: float = 0.0,
     ):
-        super().__init__(special_values, mean, std, pseudo_count=pseudo_count)
+        super().__init__(special_values, mu, sigma, pseudo_count=pseudo_count)
 
 
-class InflatedLogNormal(BaseInflated):
-    """Log normal with finite probability of observing `special_values`."""
+class InflatedLogNormal(_BaseInflated):
+    r"""Log normal with finite probability of observing `special_values`.
+
+    That is,
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_{x^\prime} \delta(x-x^\prime) & x^\prime \in \{x_1,\dots, x_n\}, \\
+            \left(1 - \sum_{x^\prime} \pi_{x^\prime} \right) \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
+        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right)  & x \notin \{x_1, \dots ,x_n\},
+        \end{matrix}
+        \right.
+    $$
+    where \(\pi_x \) is a categorical distribution.
+    """
 
     ComplementaryDistribution = LogNormal
     name = "InflatedLogNormal"
@@ -538,14 +565,21 @@ class InflatedLogNormal(BaseInflated):
     def __init__(
         self,
         special_values: Union[dict, tuple] = (0, 1, inf),
-        mean: float = 0.0,
-        std: float = 1,
+        mu: float = 0.0,
+        sigma: float = 1,
         pseudo_count: float = 0.0,
     ):
-        super().__init__(special_values, mean, std, pseudo_count=pseudo_count)
+        r"""
+        Args:
+            special_values: Set of values \( \{x_1,\dots, x_n\} \) with finite
+                probability.
+            mu: Expected value of variable's log ( \( \mu \) ).
+            sigma: Standard deviation of variable log ( \( \sigma \) ).
+        """
+        super().__init__(special_values, mu, sigma, pseudo_count=pseudo_count)
 
 
-class InflatedPinnedLogNormal(BaseInflated):
+class InflatedPinnedLogNormal(_BaseInflated):
     """Log normal with finite probability of observing `special_values`."""
 
     ComplementaryDistribution = PinnedLogNormal
@@ -554,14 +588,14 @@ class InflatedPinnedLogNormal(BaseInflated):
     def __init__(
         self,
         special_values: Union[dict, tuple] = (0, 1, inf),
-        mean: float = 0.0,
-        std: float = 1,
+        mu: float = 0.0,
+        sigma: float = 1,
         pseudo_count: float = 0.0,
     ):
-        super().__init__(special_values, mean, std, pseudo_count=pseudo_count)
+        super().__init__(special_values, mu, sigma, pseudo_count=pseudo_count)
 
 
-class InflatedGamma(BaseInflated):
+class InflatedGamma(_BaseInflated):
     """Gamma distribution with finite prob. of observing `special_values`."""
 
     ComplementaryDistribution = Gamma
@@ -577,7 +611,7 @@ class InflatedGamma(BaseInflated):
         super().__init__(special_values, alpha, beta, pseudo_count=pseudo_count)
 
 
-class InflatedExponential(BaseInflated):
+class InflatedExponential(_BaseInflated):
     """Exponential distribution with finite prob. of observing `special_values`."""
 
     ComplementaryDistribution = Exponential
@@ -592,14 +626,14 @@ class InflatedExponential(BaseInflated):
         super().__init__(special_values, rate, pseudo_count=pseudo_count)
 
 
-class ZeroInflatedExponential(BaseZeroInflated):
+class ZeroInflatedExponential(_BaseZeroInflated):
     r"""Exponential distribution with finite probability of value zero.
 
     That is,
     $$
         p(x) = \left \{ \begin{matrix}
-            \pi_0 \delta(x) & x = 0 \\
-            \left(1 - \pi_0 \right) \lambda  e^{-\lambda x}  & x \neq 0,
+            \pi_0 \delta(x) & x = 0, \\
+            \left(1 - \pi_0 \right) \lambda  e^{-\lambda x}  & x \neq 0.
         \end{matrix}
         \right.
     $$
@@ -625,8 +659,19 @@ class ZeroInflatedExponential(BaseZeroInflated):
         super().__init__(pi, rate, pseudo_count=pseudo_count)
 
 
-class ZeroInflatedGamma(BaseZeroInflated):
-    """Model p(x=0) with finite probability, and the remainder as Gamma."""
+class ZeroInflatedGamma(_BaseZeroInflated):
+    r"""Gamma distribution with finite probability of observering zero.
+
+    That is,
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_0 \delta(x) & x = 0, \\
+            \left(1 - \pi_0 \right)
+            \frac{\beta^{\alpha}}{\Gamma(\alpha)} x^{\alpha-1} e^{-\beta x} & x \neq 0.
+        \end{matrix}
+        \right.
+    $$
+    """
 
     ComplementaryDistribution = Gamma
     name = "ZeroInflatedGamma"
