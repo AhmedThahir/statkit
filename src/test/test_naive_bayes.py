@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from numpy import (
     array,
@@ -20,6 +20,7 @@ import pomegranate as pg
 from pomegranate import NormalDistribution
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
+from sklearn.utils import estimator_html_repr
 
 from statkit.naive_bayes import _BaseNaiveBayes, NaiveBayesClassifier
 from statkit.distributions import (
@@ -168,6 +169,18 @@ class TestBaseNaiveBayes(TestCase):
 
 class TestNaiveBayesClassifier(TestCase):
     """Test sklearn-wrapped Pomegranate model."""
+
+    @skip("[#5]: Looking for a non-breaking solution.")
+    def test_html_representation(self):
+        X, y = make_blobs(n_features=2, centers=2)
+
+        model = NaiveBayesClassifier(Gaussian).fit(X, y)
+        # Problem:
+        # The distributions argument contains a class (`Gaussian`), which has a:
+        # - `fit`
+        # -  `get_params`
+        # method. However, `Gaussian.get_params` can not be called.
+        representation = estimator_html_repr(model)
 
     def test_distribution_specification(self):
         """Test fit on a dataframe with different distributions per feature."""

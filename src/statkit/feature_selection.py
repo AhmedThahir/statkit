@@ -1,3 +1,4 @@
+"""Select features using statistical hypothesis testing."""
 from typing import Literal
 
 from numpy import linalg, nan
@@ -26,12 +27,11 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         self,
         X_pos: DataFrame,
         X_neg: DataFrame,
-        correction: Literal["benjamini-hochberg", "bonferroni"] = "benjamini-hochberg",
+        multiple_testing: Literal[
+            "benjamini-hochberg", "bonferroni"
+        ] = "benjamini-hochberg",
     ) -> DataFrame:
-        """Column-wise test between positive and negative group.
-
-        Args:
-            correction: What type of multiple testing correction to apply."""
+        """Column-wise test between positive and negative group."""
         result = DataFrame(
             columns=["statistic", "pvalue"], index=self.feature_names_in_
         )
@@ -47,9 +47,9 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
             result.loc[column] = [statistic, p_value]
 
         # Apply multiple-testing correction.
-        if correction == "benjamini-hochberg":
+        if multiple_testing == "benjamini-hochberg":
             reject, pvalue_corrected = fdrcorrection(result.pvalue, alpha=self.p_value)
-        elif correction == "bonferroni":
+        elif multiple_testing == "bonferroni":
             reject, pvalue_corrected = multipletests(
                 result.pvalue, alpha=self.p_value, method="bonferroni"
             )
@@ -65,7 +65,9 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
             "kolmogorov-smirnov", "mann-whitney-u", "epps-singleton"
         ] = "kolmogorov-smirnov",
         p_value: float = 0.05,
-        correction: Literal["benjamini-hochberg", "bonferroni"] = "benjamini-hochberg",
+        multiple_testing: Literal[
+            "benjamini-hochberg", "bonferroni"
+        ] = "benjamini-hochberg",
         **kwargs,
     ):
         """
@@ -74,12 +76,13 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
                 between labels.
             p_value: The null hypothesis rejection probability (including
                 `correction`).
-            correction: Multiple testing correction to apply.
+            multiple_testing: What type of correction strategy to apply to account for
+                multiple testing.
         """
         super().__init__(**kwargs)
         self.statistical_test = statistical_test
         self.p_value = p_value
-        self.correction = correction
+        self.multiple_testing = multiple_testing
 
     def _get_support_mask(self):
         """Compute support mask of features."""
