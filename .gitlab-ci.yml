@@ -4,6 +4,7 @@ run tests:
   script:
     - pip install -r requirements.txt
     - pip install coverage
+    - cd src
     - coverage run --source statkit -m unittest discover test
     - coverage report
     - coverage xml
@@ -20,7 +21,7 @@ pages:
   script:
   - pip3 install pdoc3
   - mkdir public
-  - pdoc --config latex_math=True --html --output-dir public statkit
+  - pdoc --config latex_math=True --html --output-dir public src/statkit
   - mv public/statkit/* public/ && rmdir public/statkit/
   artifacts:
     paths:
