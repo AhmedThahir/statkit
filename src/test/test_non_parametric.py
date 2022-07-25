@@ -84,6 +84,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="two-sided",
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(p_2sided, p_mlxtend["two-sided"], decimal=3)
 
@@ -95,6 +96,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="less",
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(p_less, p_mlxtend["less"], decimal=3)
 
@@ -106,6 +108,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="greater",
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(p_greater, p_mlxtend["greater"], decimal=3)
 
@@ -126,6 +129,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="less",
             n_iterations=10000,
+            random_state=1234,
         )
 
         # Out of all n(n-1) permutations (diagonals terms are skipped because
@@ -142,6 +146,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="greater",
             n_iterations=10000,
+            random_state=1234,
         )
         # There are no pairs with mean smaller than [0, 1], because [0, 0] is
         # disallowed (unique items y_true_1 = 1 is forbidden).
@@ -158,6 +163,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             alternative="two-sided",
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(p_symmetr, 4 / (n_total * (n_total - 1)), decimal=3)
 
@@ -172,7 +178,11 @@ class TestBootstrap(TestCase):
         # E[x] = p
         # Var[x] = p(1-p)/n
         estimate = bootstrap_score(
-            y_true=group, y_pred=group, metric=mean_estimator, n_iterations=10000
+            y_true=group,
+            y_pred=group,
+            metric=mean_estimator,
+            n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(estimate.point, p, decimal=1)
         std = sqrt(p * (1 - p) / n)
@@ -199,6 +209,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             pos_label=0,
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(estimate_np.point, 1 - p, decimal=1)
         std = sqrt(p * (1 - p) / n)
@@ -217,6 +228,7 @@ class TestBootstrap(TestCase):
             metric=mean_estimator,
             pos_label="a",
             n_iterations=10000,
+            random_state=1234,
         )
         assert_almost_equal(estimate_pd.point, p, decimal=1)
         std = sqrt(p * (1 - p) / n)
@@ -234,4 +246,5 @@ class TestBootstrap(TestCase):
                 metric=mean_estimator,
                 pos_label="a",
                 n_iterations=100,
+                random_state=1234,
             )

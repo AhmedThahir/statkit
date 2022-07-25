@@ -13,14 +13,12 @@ from numpy import (
     mean,
     ones_like,
     percentile,
-    random,
     unique,
     where,
     zeros_like,
 )
 from pandas import Series
-from sklearn.utils import resample
-from sklearn.utils import shuffle
+from sklearn.utils import check_random_state, resample, shuffle
 
 from statkit.types import Estimate
 
@@ -30,7 +28,7 @@ def bootstrap_score(
     y_pred,
     metric: Callable,
     n_iterations: int = 1000,
-    random_state=1234,
+    random_state=None,
     pos_label: Optional[str | int] = None,
     metrics_kwargs: dict = {},
 ) -> Estimate:
@@ -66,11 +64,11 @@ def bootstrap_score(
     else:
         _y_true = y_true
 
+    random_state = check_random_state(random_state)
+
     statistics = []
-    for i in range(n_iterations):
-        y_true_rnd, y_pred_rnd = resample(
-            _y_true, y_pred, random_state=random_state + i
-        )
+    for _ in range(n_iterations):
+        y_true_rnd, y_pred_rnd = resample(_y_true, y_pred, random_state=random_state)
         # Reject sample if all class labels are the same.
         if len(unique(y_true_rnd)) == 1:
             continue
@@ -95,7 +93,7 @@ def unpaired_permutation_test(
     metric: Callable,
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
-    random_state=1234,
+    random_state=None,
 ) -> float:
     r"""Unpaired permutation test comparing scores `y_pred_1` with `y_pred_2`.
 
@@ -125,6 +123,8 @@ def unpaired_permutation_test(
     Returns:
         The p-value for observering the difference given \( H_0 \).
     """
+    random_state = check_random_state(random_state)
+
     score1 = metric(y_true_1, y_pred_1)
     score2 = metric(y_true_2, y_pred_2)
     observed_difference = score1 - score2
@@ -135,7 +135,7 @@ def unpaired_permutation_test(
         # Pool slices and randomly split into groups of size n_1 and n_2.
         Y_1 = column_stack([y_true_1, y_pred_1])
         Y_2 = column_stack([y_true_2, y_pred_2])
-        y_H0 = shuffle(concatenate([Y_1, Y_2]), random_state=random_state + i)
+        y_H0 = shuffle(concatenate([Y_1, Y_2]), random_state=random_state)
 
         y1_true = y_H0[:n_1, 0]
         y2_true = y_H0[n_1:, 0]
@@ -167,12 +167,16 @@ def paired_permutation_test(
     metric: Callable,
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
-    random_state=1234,
+    random_state=None,
 ) -> float:
     r"""Paired permutation test comparing scores from `y_pred_1` with `y_pred_2`.
 
     Non-parametric head-to-head comparison of two predictions. Test if
     `y_pred_1` is statistically different from `y_pred_2` for a given `metric`.
+
+
+    \( H_0 \): metric scores of `y_pred_1` and `y_pred_2` come from the same population
+    (i.e., invariant under group permutation 1 <--> 2).
 
     Example:
         Test if the area under the receiver operating characteristic curve
@@ -199,8 +203,8 @@ def paired_permutation_test(
     Returns:
         The p-value for observering the difference given \( H_0 \).
     """
+    random_state = check_random_state(random_state)
 
-    random.seed(random_state)
     score1 = metric(y_true, y_pred_1)
     score2 = metric(y_true, y_pred_2)
     observed_difference = score1 - score2
@@ -208,7 +212,7 @@ def paired_permutation_test(
     m = len(y_true)
     score_diff = []
     for _ in range(n_iterations):
-        mask = random.randint(2, size=m)
+        mask = random_state.randint(2, size=m)
         p1 = where(mask, y_pred_1, y_pred_2)
         p2 = where(mask, y_pred_2, y_pred_1)
 
