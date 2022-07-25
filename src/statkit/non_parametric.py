@@ -4,7 +4,7 @@ This module contains a set of non-parametric (i.e., without assuming any
 specific distribution) and exact methods of computing 95 % confidence intervals
 and \(p\)-values of your sci-kit learn model's predictions.
 """
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, Union
 
 from numpy import (
     array,
@@ -29,7 +29,7 @@ def bootstrap_score(
     metric: Callable,
     n_iterations: int = 1000,
     random_state=None,
-    pos_label: Optional[str | int] = None,
+    pos_label: Optional[Union[str, int]] = None,
     metrics_kwargs: dict = {},
 ) -> Estimate:
     """Estimate 95 % confidence interval for `metric` by bootstrapping.
