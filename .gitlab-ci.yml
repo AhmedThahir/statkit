@@ -4,7 +4,8 @@ run tests:
   script:
     - pip install -r requirements.txt
     - pip install coverage
-    - coverage run --source src/statkit -m unittest discover test
+    - cd src
+    - coverage run --source statkit -m unittest discover test
     - coverage report
     - coverage xml
   coverage: '/TOTAL.*\s([.\d]+)%/'
