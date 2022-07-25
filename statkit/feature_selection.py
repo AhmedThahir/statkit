@@ -15,7 +15,12 @@ from statsmodels.stats.multitest import fdrcorrection, multipletests
 
 
 class StatisticalTestFilter(BaseEstimator, SelectorMixin):
-    """Select columns with significant difference between labels."""
+    """Select columns with significant difference between labels.
+
+    Test which features the distribution of the postive class is stastistically
+    different from the negative class, using multiple testing correction. Keep only the
+    features that passed the statistical test.
+    """
 
     def _apply_test(
         self,

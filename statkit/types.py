@@ -1,7 +1,8 @@
 import re
+from typing import Optional
 
 
-def _parse_scientific_notation(input: float) -> None | tuple[float, int]:
+def _parse_scientific_notation(input: float) -> Optional[tuple[float, int]]:
     """Convert number 0.00001234 into 1.234 and -6"""
     input_str = "{:e}".format(input)
     scientific_number = r"([-+]?[\d]+\.?[\d]*)[Ee]((?:[-+]?[\d]+)?)"
@@ -9,6 +10,8 @@ def _parse_scientific_notation(input: float) -> None | tuple[float, int]:
         number = float(match.group(1))
         exponent = int(match.group(2))
         return number, exponent
+
+    return None
 
 
 def _get_number_of_significant_digits(value: float, error: float) -> int:
@@ -115,11 +118,11 @@ class Estimate:
         return (
             "{:."
             + str(n_digits - 1)
-            + "f}$^{{+{:."
+            + r"f}$^{{+{:."
             + str(n_digits - 1)
-            + "f}}}_{{{:."
+            + r"f}}}_{{{:."
             + str(n_digits - 1)
-            + "f}}} \cdot 10^{{{:}}}$"
+            + r"f}}} \cdot 10^{{{:}}}$"
         ).format(*label_args)
 
     def __str__(self) -> str:
