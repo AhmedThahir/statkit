@@ -1,3 +1,29 @@
 [build-system]
-requires = ["setuptools>=42"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "statkit"
+version = "0.0.4"
+authors = [{name="H. C. Donker", email="h.c.donker@umcg.nl"}]
+description = "Confidence intervals and p-values for sci-kit learn."
+readme = "README.md"
+license = {file="LICENSE"}
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pomegranate>=0.14.8",
+    "scikit-learn",
+    "statsmodels",
+    "pandas",
+    "numpy",
+    "scipy",
+]
+
+[project.urls]
+"Homepage" = "https://gitlab.com/hylkedonker/statkit"
+"Bug Tracker" = "https://gitlab.com/hylkedonker/statkit/-/issues"
