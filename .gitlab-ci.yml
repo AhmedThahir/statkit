@@ -1,9 +1,10 @@
-run tests:
+.run tests:
   stage: test
-  image: python:3
-  script:
+  image: python
+  before_script:
     - pip install -r requirements.txt
     - pip install coverage
+  script:
     - cd src
     - coverage run --source statkit -m unittest discover test
     - coverage report
@@ -13,7 +14,25 @@ run tests:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: src/coverage.xml
+
+run tests 3.9:
+  stage: test
+  extends: ".run tests"
+  needs: []
+  image: python:3.9
+
+run tests 3.10:
+  stage: test
+  extends: ".run tests"
+  needs: []
+  image: python:3.10
+
+# run tests 3.11:
+#   stage: test
+#   extends: ".run tests"
+#   needs: []
+#   image: python:3.11-rc-bullseye
 
 pages:
   image: python:3
