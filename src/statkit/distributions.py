@@ -64,7 +64,7 @@ class LogNormal(pg.LogNormalDistribution):
 
     $$
     p(x) = \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
-        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right).
+        \exp \left( -\frac{(\ln x - \mu)^2}{2\sigma^2} \right).
     $$
     """
 
@@ -103,7 +103,7 @@ class PinnedLogNormal(LogNormal):
 
     $$
     p(x) = \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
-        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right).
+        \exp \left( -\frac{(\ln x - \mu)^2}{2\sigma^2} \right).
     $$
     """
 
@@ -117,7 +117,14 @@ class PinnedLogNormal(LogNormal):
 
 
 class Bernoulli(pg.BernoulliDistribution):
-    """Extension of Pomegranate Bernoulli distribution supporting pseudo_counts."""
+    r"""Extension of Pomegranate Bernoulli distribution supporting pseudo_counts.
+
+    $$
+    p(x) = \pi^x (1-\pi)^{1-x},
+    $$
+
+    where \( \pi \) is the mean of the distribution.
+    """
 
     name = "BernoulliDistribution"
 
@@ -126,6 +133,10 @@ class Bernoulli(pg.BernoulliDistribution):
         return super().__new__(cls, p, **kwargs)
 
     def __init__(self, p: float = 0.5, pseudo_count: float = 0.0, **kwargs):
+        r"""
+        Args:
+            p: Probability \( \pi \) of sampling a one.
+        """
         self.pseudo_count = pseudo_count
 
         # Pseudo-count hack: compute summaries so that the next `fit` will weigh
@@ -513,7 +524,22 @@ class _BaseZeroInflated(_AbstractInflated):
 
 
 class ZeroInflatedGaussian(_BaseZeroInflated):
-    """Model p(x=0) with finite probability, and the remainder as Gaussian."""
+    r"""Model p(x=0) with finite probability, and the remainder as Gaussian.
+
+    That is,
+    $$
+        p(x) = \left \{ \begin{matrix}
+            \pi_0 \delta(x) & x = 0, \\
+            \left(1 - \pi_0 \right) \frac{1}{\sqrt{2\pi \sigma^2} e^{-\frac{(x-\mu)^2}{2\sigma^2}}  & x \neq 0.
+        \end{matrix}
+        \right.
+    $$
+
+    The mean of this distribution is:
+    $$
+    (1-\pi_0) \mu.
+    $$
+    """
 
     ComplementaryDistribution = Gaussian
     name = "ZeroInflatedGaussian"
@@ -525,6 +551,12 @@ class ZeroInflatedGaussian(_BaseZeroInflated):
         sigma: float = 1.0,
         pseudo_count: float = 0.0,
     ):
+        r"""
+        Args:
+            pi: Probability \( \pi \) of observering a zero.
+            mu: Mean \( \mu \) of Gaussian.
+            sigma: Standard deviation \( \sigma \) of Gaussian.
+        """
         super().__init__(pi, mu, sigma, pseudo_count=pseudo_count)
 
 
@@ -552,7 +584,7 @@ class InflatedLogNormal(_BaseInflated):
         p(x) = \left \{ \begin{matrix}
             \pi_{x^\prime} \delta(x-x^\prime) & x^\prime \in \{x_1,\dots, x_n\}, \\
             \left(1 - \sum_{x^\prime} \pi_{x^\prime} \right) \frac{1}{\sqrt{2\pi \sigma^2 x^2}}
-        \exp \left( \frac{(\ln x - \mu)^2}{2\sigma^2} \right)  & x \notin \{x_1, \dots ,x_n\},
+        \exp \left( -\frac{(\ln x - \mu)^2}{2\sigma^2} \right)  & x \notin \{x_1, \dots ,x_n\},
         \end{matrix}
         \right.
     $$

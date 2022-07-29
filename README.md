@@ -10,7 +10,7 @@ receiver operating characteristic curve (ROC AUC):
 from sklearn.metrics import roc_auc_score
 from statkit.non_parametric import bootstrap_score
 
-y_prob = model.predict(X_test)
+y_prob = model.predict_proba(X_test)[:, 1]
 auc_95ci = bootstrap_score(y_test, y_prob, metric=roc_auc_score)
 print('Area under the ROC curve:', auc_95ci)
 ```
@@ -23,8 +23,8 @@ curve (ROC AUC) of model 1 is significantly larger than model 2:
 from sklearn.metrics import roc_auc_score
 from statkit.non_parametric import paired_permutation_test
 
-y_pred_1 = model_1.predict(X_test)
-y_pred_2 = model_2.predict(X_test)
+y_pred_1 = model_1.predict_proba(X_test)[:, 1]
+y_pred_2 = model_2.predict_proba(X_test)[:, 1]
 p_value = paired_permutation_test(y_test, y_pred_1, y_pred_2, metric=roc_auc_score)
 ```
 
