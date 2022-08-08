@@ -2,6 +2,8 @@
 from typing import Literal
 
 from numpy import linalg, nan
+from numpy.typing import NDArray
+
 from pandas import DataFrame
 from scipy.stats import (
     epps_singleton_2samp as epps_singleton,
@@ -25,32 +27,34 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
 
     def _apply_test(
         self,
-        X_pos: DataFrame,
-        X_neg: DataFrame,
+        X_pos: NDArray,
+        X_neg: NDArray,
         multiple_testing: Literal[
             "benjamini-hochberg", "bonferroni"
         ] = "benjamini-hochberg",
     ) -> DataFrame:
         """Column-wise test between positive and negative group."""
-        result = DataFrame(
-            columns=["statistic", "pvalue"], index=self.feature_names_in_
-        )
+        columns = tuple(range(X_pos.shape[1]))
+        if hasattr(self, "feature_names_in_"):
+            columns = self.feature_names_in_
+
+        result = DataFrame(columns=["statistic", "pvalue"], index=columns)
 
         # Perform test for each feature.
-        for column in self.feature_names_in_:
+        for i, col in enumerate(columns):
             try:
                 statistic, p_value = self.test_(
-                    X_pos[column], X_neg[column], **self.test_kwargs_
+                    X_pos[:, i], X_neg[:, i], **self.test_kwargs_
                 )
             except (linalg.LinAlgError, ValueError):
                 statistic, p_value = nan, nan
-            result.loc[column] = [statistic, p_value]
+            result.loc[col] = [statistic, p_value]
 
         # Apply multiple-testing correction.
         if multiple_testing == "benjamini-hochberg":
             reject, pvalue_corrected = fdrcorrection(result.pvalue, alpha=self.p_value)
         elif multiple_testing == "bonferroni":
-            reject, pvalue_corrected = multipletests(
+            reject, pvalue_corrected, _, _ = multipletests(
                 result.pvalue, alpha=self.p_value, method="bonferroni"
             )
 
@@ -68,6 +72,7 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         multiple_testing: Literal[
             "benjamini-hochberg", "bonferroni"
         ] = "benjamini-hochberg",
+        invert: bool = False,
         **kwargs,
     ):
         """
@@ -78,14 +83,19 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
                 `correction`).
             multiple_testing: What type of correction strategy to apply to account for
                 multiple testing.
+            invert: Invert selection, by keeping only the non-significant (instead of
+                significant) columns.
         """
         super().__init__(**kwargs)
         self.statistical_test = statistical_test
         self.p_value = p_value
         self.multiple_testing = multiple_testing
+        self.invert = invert
 
     def _get_support_mask(self):
         """Compute support mask of features."""
+        if self.invert:
+            return ~self.scores_["reject"]
         return self.scores_["reject"]
 
     def fit(self, X, y):
@@ -110,6 +120,13 @@ class StatisticalTestFilter(BaseEstimator, SelectorMixin):
         assert len(self.classes_) == 2
         X_neg = X[y == self.classes_[0]]
         X_pos = X[y == self.classes_[1]]
-        self.scores_ = self._apply_test(X_pos, X_neg, correction=self.correction)
+
+        if isinstance(X, DataFrame):
+            X_neg = X_neg.to_numpy()
+            X_pos = X_pos.to_numpy()
+
+        self.scores_ = self._apply_test(
+            X_pos, X_neg, multiple_testing=self.multiple_testing
+        )
 
         return self
