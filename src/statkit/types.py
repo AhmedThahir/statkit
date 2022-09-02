@@ -33,6 +33,7 @@ def _format_float(value: float, n_digits: int):
         format_template = "{:." + str(n_digits) + "f}"
         return format_template.format(value)
 
+    # Use scientific notation, e.g., 1.23 e-02 for `n_digits = 3`.
     format_template = "{:." + str(n_digits - 1) + "e}"
     return format_template.format(value)
 
