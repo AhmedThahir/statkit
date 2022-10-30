@@ -32,7 +32,7 @@ run tests 3.10:
 #   stage: test
 #   extends: ".run tests"
 #   needs: []
-#   image: python:3.11-rc-bullseye
+#   image: python:3.11
 
 pages:
   image: python:3
