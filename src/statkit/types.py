@@ -147,3 +147,9 @@ class Estimate:
     def __repr__(self) -> str:
         """Machine friendly representation."""
         return f"Estimate({self.point}, lower={self.lower}, upper={self.upper})"
+
+    def __iter__(self):
+        """Make function representable as a dict."""
+        yield "point", self.point
+        yield "lower", self.lower
+        yield "upper", self.upper

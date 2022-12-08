@@ -109,3 +109,14 @@ class TestEstimate(TestCase):
         # Verify that the representation can be used to instantiate new object.
         representation = estimate.__repr__()
         self.assertEqual(estimate, eval(representation))
+
+    def test_dict(self):
+        """Test that object can be converted to dict."""
+        estimate = Estimate(
+            point=0.711,
+            lower=0.7,
+            upper=0.81234,
+        )
+        self.assertDictEqual(
+            dict(estimate), {"point": 0.711, "lower": 0.7, "upper": 0.81234}
+        )
