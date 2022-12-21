@@ -129,6 +129,7 @@ def binary_classification_report(
     y_pred_proba,
     threshold: float = 0.5,
     n_iterations: int = 1000,
+    quantile_range: tuple = (0.025, 0.975),
     random_state=None,
 ) -> DataFrame:
     """Compile performance metrics of a binary classifier.
@@ -136,12 +137,14 @@ def binary_classification_report(
     Args:
         y_true: Ground truth labels (0 or 1).
         y_pred: Predicted probability of the positive class.
-        threshold: Dichotomise probabilities greater or equal to this threshold as positive.
+        threshold: Dichotomise probabilities greater or equal to this threshold as
+            positive.
+        quantile_range: Confidence interval quantiles.
         n_iterations: Number of bootstrap permutations.
 
     Returns:
-        A dataframe with the estimated classification metrics (`point`) and 95 %
-        confidence interval (from `lower` to `upper`).
+        A dataframe with the estimated classification metrics (`point`) and (by default
+        95 %) confidence interval (from `lower` to `upper`).
     """
     scores = DataFrame(
         index=[
@@ -158,6 +161,7 @@ def binary_classification_report(
     kwargs = {
         "n_iterations": n_iterations,
         "random_state": random_state,
+        "quantile_range": quantile_range,
     }
 
     rank_scorers = {

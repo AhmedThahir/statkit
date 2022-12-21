@@ -30,6 +30,7 @@ def bootstrap_score(
     n_iterations: int = 1000,
     random_state=None,
     pos_label: Optional[Union[str, int]] = None,
+    quantile_range: tuple[float, float] = (0.025, 0.975),
     metrics_kwargs: dict = {},
 ) -> Estimate:
     """Estimate 95 % confidence interval for `metric` by bootstrapping.
@@ -50,6 +51,7 @@ def bootstrap_score(
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
         pos_label: When `y_true` is a binary classification, the positive class.
+        quantile_range: Confidence interval range.
         metric_kwargs: Pass additional keyword arguments to `metric`.
 
     Returns:
@@ -75,12 +77,9 @@ def bootstrap_score(
         score = metric(y_true_rnd, y_pred_rnd, **metrics_kwargs)
         statistics.append(score)
 
-    # confidence intervals
-    alpha = 0.95
-    p = ((1.0 - alpha) / 2.0) * 100
-    lower = percentile(statistics, p)
-    p = (alpha + ((1.0 - alpha) / 2.0)) * 100
-    upper = percentile(statistics, p)
+    # Estimate confidence intervals.
+    lower = percentile(statistics, quantile_range[0])
+    upper = percentile(statistics, quantile_range[1])
     point_estimate = metric(_y_true, y_pred)
     return Estimate(point=point_estimate, lower=lower, upper=upper)
 
