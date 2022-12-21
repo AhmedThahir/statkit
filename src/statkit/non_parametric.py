@@ -12,7 +12,7 @@ from numpy import (
     concatenate,
     mean,
     ones_like,
-    percentile,
+    quantile,
     unique,
     where,
     zeros_like,
@@ -78,8 +78,8 @@ def bootstrap_score(
         statistics.append(score)
 
     # Estimate confidence intervals.
-    lower = percentile(statistics, quantile_range[0])
-    upper = percentile(statistics, quantile_range[1])
+    lower = quantile(statistics, quantile_range[0])
+    upper = quantile(statistics, quantile_range[1])
     point_estimate = metric(_y_true, y_pred)
     return Estimate(point=point_estimate, lower=lower, upper=upper)
 
