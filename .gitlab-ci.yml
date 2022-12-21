@@ -28,11 +28,11 @@ run tests 3.10:
   needs: []
   image: python:3.10
 
-# run tests 3.11:
-#   stage: test
-#   extends: ".run tests"
-#   needs: []
-#   image: python:3.11
+run tests 3.11:
+  stage: test
+  extends: ".run tests"
+  needs: []
+  image: python:3.11
 
 pages:
   image: python:3.10
