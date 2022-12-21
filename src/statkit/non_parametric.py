@@ -8,7 +8,7 @@ from typing import Callable, Literal, Optional, Union
 
 from numpy import (
     array,
-    column_stack,
+    stack,
     concatenate,
     mean,
     ones_like,
@@ -78,8 +78,8 @@ def bootstrap_score(
         statistics.append(score)
 
     # Estimate confidence intervals.
-    lower = quantile(statistics, quantile_range[0])
-    upper = quantile(statistics, quantile_range[1])
+    lower = quantile(statistics, quantile_range[0], axis=0)
+    upper = quantile(statistics, quantile_range[1], axis=0)
     point_estimate = metric(_y_true, y_pred)
     return Estimate(point=point_estimate, lower=lower, upper=upper)
 
@@ -132,14 +132,14 @@ def unpaired_permutation_test(
     score_diff = []
     for i in range(n_iterations):
         # Pool slices and randomly split into groups of size n_1 and n_2.
-        Y_1 = column_stack([y_true_1, y_pred_1])
-        Y_2 = column_stack([y_true_2, y_pred_2])
+        Y_1 = stack([y_true_1, y_pred_1], axis=-1)
+        Y_2 = stack([y_true_2, y_pred_2], axis=-1)
         y_H0 = shuffle(concatenate([Y_1, Y_2]), random_state=random_state)
 
-        y1_true = y_H0[:n_1, 0]
-        y2_true = y_H0[n_1:, 0]
-        y1_pred_H0 = y_H0[:n_1, 1]
-        y2_pred_H0 = y_H0[n_1:, 1]
+        y1_true = y_H0[:n_1, ..., 0]
+        y2_true = y_H0[n_1:, ..., 0]
+        y1_pred_H0 = y_H0[:n_1, ..., 1]
+        y2_pred_H0 = y_H0[n_1:, ..., 1]
 
         if len(unique(y1_true)) == 1 or len(unique(y2_true)) == 1:
             continue
@@ -150,11 +150,11 @@ def unpaired_permutation_test(
 
     permuted_diff = array(score_diff)
     if alternative == "greater":
-        p_value = mean(permuted_diff >= observed_difference)
+        p_value = mean(permuted_diff >= observed_difference, axis=0)
     elif alternative == "less":
-        p_value = mean(permuted_diff <= observed_difference)
+        p_value = mean(permuted_diff <= observed_difference, axis=0)
     elif alternative == "two-sided":
-        p_value = mean(abs(permuted_diff) >= abs(observed_difference))
+        p_value = mean(abs(permuted_diff) >= abs(observed_difference), axis=0)
 
     return p_value
 
@@ -208,10 +208,13 @@ def paired_permutation_test(
     score2 = metric(y_true, y_pred_2)
     observed_difference = score1 - score2
 
+    # Broadcast mask to shape of y_pred_1.
+    mask_shape = (-1,) + len(y_pred_1.shape[1:]) * (1,)
+
     m = len(y_true)
     score_diff = []
     for _ in range(n_iterations):
-        mask = random_state.randint(2, size=m)
+        mask = random_state.randint(2, size=m).reshape(mask_shape)
         p1 = where(mask, y_pred_1, y_pred_2)
         p2 = where(mask, y_pred_2, y_pred_1)
 
@@ -222,10 +225,10 @@ def paired_permutation_test(
     permuted_diff = array(score_diff)
 
     if alternative == "greater":
-        p_value = mean(permuted_diff >= observed_difference)
+        p_value = mean(permuted_diff >= observed_difference, axis=0)
     elif alternative == "less":
-        p_value = mean(permuted_diff <= observed_difference)
+        p_value = mean(permuted_diff <= observed_difference, axis=0)
     elif alternative == "two-sided":
-        p_value = mean(abs(permuted_diff) >= abs(observed_difference))
+        p_value = mean(abs(permuted_diff) >= abs(observed_difference), axis=0)
 
     return p_value
