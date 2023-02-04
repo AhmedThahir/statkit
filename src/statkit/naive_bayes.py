@@ -1,9 +1,9 @@
-"""
-Naive Bayes classifier with support for feature specific distributions.
+"""DEPRECATED: Naive Bayes classifier with support for feature specific distributions.
 
 See `statkit.distributions` for a list of supported distributions.
 """
 from typing import Union
+from warnings import warn
 
 from pomegranate.bayes import BayesModel
 from pomegranate.distributions import (
@@ -15,6 +15,13 @@ from numpy import fromiter, isin, ndarray, testing, unique, vectorize, zeros
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_is_fitted
+
+
+warn(
+    "The naive Bayes module is deprecated and will be removed in version 0.2.0.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class _BaseNaiveBayes(ClassifierMixin, BaseEstimator):
