@@ -34,7 +34,6 @@ run tests 3.11:
   before_script:
     - pip install -r requirements.txt
     - pip install coverage
-    - pip install 'cython @ git+https://github.com/cython/cython.git'
   needs: []
   image: python:3.11
 
