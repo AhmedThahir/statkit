@@ -132,7 +132,16 @@ def binary_classification_report(
     quantile_range: tuple = (0.025, 0.975),
     random_state=None,
 ) -> DataFrame:
-    """Compile performance metrics of a binary classifier.
+    r"""Compile performance metrics of a binary classifier.
+
+    Evaluates the model according to the following metrics:
+
+    - Accuracy,
+    - Average precision (area under the precision-recall curve),
+    - \( F_1 \),
+    - Area under the receiver operating characteristic curve (ROC AUC),
+    - Sensitivity (or, true positive rate, see `sensitivity`),
+    - Specificity (or, true negative rate, see `specificity`).
 
     Args:
         y_true: Ground truth labels (0 or 1).
