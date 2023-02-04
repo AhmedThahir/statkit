@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "statkit"
-version = "0.1.2"
+version = "0.2.0"
 authors = [{name="H. C. Donker", email="h.c.donker@umcg.nl"}]
 description = "Confidence intervals and p-values for sci-kit learn."
 readme = "README.md"
@@ -16,7 +16,6 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pomegranate>=0.14.8",
     "scikit-learn",
     "statsmodels",
     "pandas",
