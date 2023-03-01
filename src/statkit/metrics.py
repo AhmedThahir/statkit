@@ -89,6 +89,30 @@ def false_positive_rate(y_true, y_prob, threshold: float = 0.5) -> float:
     return false_positives / negatives
 
 
+def false_negative_rate(y_true, y_prob, threshold: float = 0.5) -> float:
+    r"""The number of false negatives out of all positives.
+
+    Also called the miss rate.
+    $$r_{\mathrm{fn}} = \frac{f_n}{t_p + f_n} = \frac{f_n}{p}$$
+
+    Args:
+        y_true: Ground truth label (binarised).
+        y_prob: Probability of positive class.
+        threshold: Classify as positive when probability exceeds threshold.
+    """
+    if not isinstance(y_true, (ndarray, Series)):
+        y_true = array(y_true)
+    if not isinstance(y_prob, (ndarray, Series)):
+        y_prob = array(y_prob)
+
+    y_pred = y_prob > threshold
+    positives = sum(y_true)
+    # Actual positive, but classified as negative.
+    is_fn = (y_true == 1) & (y_pred == 0)
+    false_negatives = sum(is_fn)
+    return false_negatives / positives
+
+
 def sensitivity(y_true, y_prob, threshold: float = 0.5) -> float:
     r"""The number of true positive out of all positives.
 
