@@ -80,7 +80,7 @@ def bootstrap_score(
     # Estimate confidence intervals.
     lower = quantile(statistics, quantile_range[0], axis=0)
     upper = quantile(statistics, quantile_range[1], axis=0)
-    point_estimate = metric(_y_true, y_pred)
+    point_estimate = metric(_y_true, y_pred, **metrics_kwargs)
     return Estimate(point=point_estimate, lower=lower, upper=upper)
 
 
@@ -93,6 +93,7 @@ def unpaired_permutation_test(
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
     random_state=None,
+    metrics_kwargs: dict = {},
 ) -> float:
     r"""Unpaired permutation test comparing scores `y_pred_1` with `y_pred_2`.
 
@@ -118,14 +119,15 @@ def unpaired_permutation_test(
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
+        metric_kwargs: Pass additional keyword arguments to `metric`.
 
     Returns:
         The p-value for observering the difference given \( H_0 \).
     """
     random_state = check_random_state(random_state)
 
-    score1 = metric(y_true_1, y_pred_1)
-    score2 = metric(y_true_2, y_pred_2)
+    score1 = metric(y_true_1, y_pred_1, **metrics_kwargs)
+    score2 = metric(y_true_2, y_pred_2, **metrics_kwargs)
     observed_difference = score1 - score2
 
     n_1 = len(y_pred_1)
@@ -144,8 +146,8 @@ def unpaired_permutation_test(
         if len(unique(y1_true)) == 1 or len(unique(y2_true)) == 1:
             continue
 
-        permuted_score1 = metric(y1_true, y1_pred_H0)
-        permuted_score2 = metric(y2_true, y2_pred_H0)
+        permuted_score1 = metric(y1_true, y1_pred_H0, **metrics_kwargs)
+        permuted_score2 = metric(y2_true, y2_pred_H0, **metrics_kwargs)
         score_diff.append(permuted_score1 - permuted_score2)
 
     permuted_diff = array(score_diff)
@@ -167,6 +169,7 @@ def paired_permutation_test(
     alternative: Literal["less", "greater", "two-sided"] = "two-sided",
     n_iterations: int = 1000,
     random_state=None,
+    metrics_kwargs: dict = {},
 ) -> float:
     r"""Paired permutation test comparing scores from `y_pred_1` with `y_pred_2`.
 
@@ -198,14 +201,15 @@ def paired_permutation_test(
         metric: Performance metric that takes the true and predicted labels and
             returns a score.
         n_iterations: Resample the data (with replacement) this many times.
+        metric_kwargs: Pass additional keyword arguments to `metric`.
 
     Returns:
         The p-value for observering the difference given \( H_0 \).
     """
     random_state = check_random_state(random_state)
 
-    score1 = metric(y_true, y_pred_1)
-    score2 = metric(y_true, y_pred_2)
+    score1 = metric(y_true, y_pred_1, **metrics_kwargs)
+    score2 = metric(y_true, y_pred_2, **metrics_kwargs)
     observed_difference = score1 - score2
 
     # Broadcast mask to shape of y_pred_1.
@@ -218,8 +222,8 @@ def paired_permutation_test(
         p1 = where(mask, y_pred_1, y_pred_2)
         p2 = where(mask, y_pred_2, y_pred_1)
 
-        permuted_score1 = metric(y_true, p1)
-        permuted_score2 = metric(y_true, p2)
+        permuted_score1 = metric(y_true, p1, **metrics_kwargs)
+        permuted_score2 = metric(y_true, p2, **metrics_kwargs)
         score_diff.append(permuted_score1 - permuted_score2)
 
     permuted_diff = array(score_diff)
