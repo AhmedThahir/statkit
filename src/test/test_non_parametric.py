@@ -4,6 +4,7 @@ from numpy import ones_like, sqrt, zeros
 from numpy import array, arange, concatenate, stack
 from numpy.testing import assert_almost_equal
 from pandas import Series, concat
+from sklearn.metrics import accuracy_score
 
 from statkit.non_parametric import (
     bootstrap_score,
@@ -258,6 +259,14 @@ class TestBootstrap(TestCase):
         # Gaussian: 95 % confidence interval is roughly 1.96 standard deviations.
         assert_almost_equal(estimate.lower, p[0] - 1.96 * std[0], decimal=1)
         assert_almost_equal(estimate.point, p[0] + 1.96 * std[0], decimal=1)
+
+    def test_bootstrap_no_variability(self):
+        """Test confidence interval for `y_true` and `y_pred` identical."""
+        y_true = y_pred = array([0, 0, 0, 0])
+        estimate = bootstrap_score(y_true, y_pred, accuracy_score, n_iterations=100)
+        self.assertEqual(estimate.point, 1.0)
+        self.assertEqual(estimate.lower, 1.0)
+        self.assertEqual(estimate.upper, 1.0)
 
     def test_bootstrap_positive_class(self):
         """Test that we can specify a positive class."""

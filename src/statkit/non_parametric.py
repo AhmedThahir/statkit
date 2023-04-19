@@ -77,10 +77,16 @@ def bootstrap_score(
         score = metric(y_true_rnd, y_pred_rnd, **metrics_kwargs)
         statistics.append(score)
 
+    point_estimate = metric(_y_true, y_pred, **metrics_kwargs)
+    # If all samples were rejected, there is no variability in the dataset to bootstrap.
+    if len(statistics) == 0:
+        return Estimate(
+            point=point_estimate, lower=point_estimate, upper=point_estimate
+        )
+
     # Estimate confidence intervals.
     lower = quantile(statistics, quantile_range[0], axis=0)
     upper = quantile(statistics, quantile_range[1], axis=0)
-    point_estimate = metric(_y_true, y_pred, **metrics_kwargs)
     return Estimate(point=point_estimate, lower=lower, upper=upper)
 
 

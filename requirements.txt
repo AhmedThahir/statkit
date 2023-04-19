@@ -5,3 +5,4 @@ pandas
 scipy
 statsmodels
 matplotlib
+statkit==0.2.1
