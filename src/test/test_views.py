@@ -8,12 +8,22 @@ class TestViews(TestCase):
         """Test formatting of p-value."""
         # When >= 0.10, don't use 10 to power stuff.
         self.assertEqual(format_p_value(0.10, latex=False), "0.10")
-        self.assertEqual(format_p_value(0.10, latex=True), "$0.10$")
         self.assertEqual(format_p_value(0.10, symbol="p", latex=False), "p = 0.10")
-        self.assertEqual(format_p_value(0.10, latex=True, symbol="p"), "$p = 0.10$")
         self.assertEqual(format_p_value(0.0512, latex=False), "5.1E-02")
+
+    def test_format_p_value_latex(self):
+        """Test formatting of p-value in latex."""
+        # When >= 0.10, don't use 10 to power stuff.
+        self.assertEqual(format_p_value(0.10, latex=True), "$0.10$")
+        self.assertEqual(format_p_value(0.10, latex=True, symbol="p"), "$p = 0.10$")
         self.assertEqual(
             format_p_value(0.0512, latex=True, symbol="q"), r"$q = 5.1 \cdot 10^{-2}$"
+        )
+        self.assertEqual(
+            format_p_value(
+                6.918665316906319e-27, symbol="p", format="scientific", latex=True
+            ),
+            r"$p = 6.9 \cdot 10^{-27}$",
         )
 
     def test_format_p_value_compact(self):

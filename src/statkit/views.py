@@ -12,7 +12,7 @@ def _format_scientific(number: float, latex: bool) -> str:
         number_str = "{:.1E}".format(number)
         if latex:
             number_str = re.sub(
-                r"([0-9]+\.[0-9])E-0([0-9]+)", r"\1 \\cdot 10^{-\2}", number_str
+                r"([0-9]+\.[0-9])E-0?([0-9]+)", r"\1 \\cdot 10^{-\2}", number_str
             )
     else:
         number_str = f"{number:.2f}"
