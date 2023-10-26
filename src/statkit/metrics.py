@@ -1,5 +1,5 @@
 """Classification metrics not part of sci-kit learn."""
-from numpy import array, exp, log, mean, ndarray, isneginf, where
+from numpy import array, exp, isneginf, log, mean, ndarray, sum, where
 from pandas import DataFrame, Series
 from sklearn.metrics import (
     accuracy_score,
