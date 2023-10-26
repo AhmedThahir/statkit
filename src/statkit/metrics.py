@@ -234,7 +234,7 @@ def perplexity(X, probs):
 
     Returns:
         The perplexity over the dataset (a scalar), ranging from 1 (best) to infinity,
-        with a perplexity equal to `features` corresponding to a uniform distribution.
+        with a perplexity equal to `n` corresponding to a uniform distribution.
     """
     n_words = X.sum(axis=1, keepdims=True)
     log_probs = log(probs)
