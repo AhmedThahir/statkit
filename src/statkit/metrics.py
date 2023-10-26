@@ -1,5 +1,5 @@
 """Classification metrics not part of sci-kit learn."""
-from numpy import array, ndarray
+from numpy import array, exp, log, mean, ndarray, isneginf, where
 from pandas import DataFrame, Series
 from sklearn.metrics import (
     accuracy_score,
@@ -218,3 +218,27 @@ def binary_classification_report(
         scores.loc[name] = dict(score)
 
     return scores
+
+
+def perplexity(X, probs):
+    r"""Per word perplexity.
+
+    $$
+    \mathcal{L} = \exp\left(-\frac{1}{m}\sum_{i=1}^m  \sum_{j=1}^n \frac{x_{ij}
+    \log p_{ij}}{\sum_{j=1}^n x_{ij}}\right)
+    $$
+
+    Args:
+        X: The word counts (a matrix of shape `(m, n)`).
+        probs: The probability of each word (a matrix of shape `(m, n)`).
+
+    Returns:
+        The perplexity over the dataset (a scalar), ranging from 1 (best) to infinity,
+        with a perplexity equal to `features` corresponding to a uniform distribution.
+    """
+    n_words = X.sum(axis=1, keepdims=True)
+    log_probs = log(probs)
+    # Make sure we don't end up with nan because -inf * 0 = nan.
+    log_probs = where(isneginf(log_probs) & (X == 0.0), 0.0, log_probs)
+    log_likel = X * log_probs
+    return exp(-mean(sum(log_likel / n_words, axis=1)))
